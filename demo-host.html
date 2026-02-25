@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Beliv AI Agent Widget Demo</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: "Manrope", "Segoe UI", sans-serif;
+        color: #122233;
+        background: linear-gradient(170deg, #eef7f4 0%, #f3f8fd 45%, #fffef9 100%);
+      }
+      .page {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 56px 18px 120px;
+      }
+      h1 {
+        margin: 0 0 10px;
+        font-size: 36px;
+      }
+      h2 {
+        margin: 0;
+        font-size: 22px;
+      }
+      p {
+        margin: 0 0 12px;
+        line-height: 1.6;
+      }
+      .card {
+        margin-top: 28px;
+        border: 1px solid #dbe8ee;
+        border-radius: 14px;
+        padding: 16px;
+        background: #ffffffd9;
+      }
+      .context-grid {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #2d4252;
+      }
+      .field-wide {
+        grid-column: 1 / -1;
+      }
+      .field input,
+      .field select {
+        height: 40px;
+        border: 1px solid #c9d9e3;
+        border-radius: 10px;
+        padding: 0 12px;
+        background: #ffffff;
+        color: #132638;
+        font-size: 14px;
+        outline: none;
+      }
+      .field input:focus,
+      .field select:focus {
+        border-color: #0f766e;
+        box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
+      }
+      .hint {
+        margin-top: 10px;
+        margin-bottom: 0;
+        color: #4b6072;
+        font-size: 13px;
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
+      @media (max-width: 760px) {
+        .context-grid {
+          grid-template-columns: 1fr;
+        }
+        .field-wide {
+          grid-column: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <h1>Host Site Content</h1>
+      <p>
+        This page simulates a host website with many sections and documents. The embedded AI widget
+        helps users quickly find relevant details instead of browsing manually.
+      </p>
+      <p>
+        Example user prompts: "How do I reset my password?", "Where can I see pricing?", "How do I
+        contact support?".
+      </p>
+
+      <section class="card">
+        <h2>Chat Context Fields</h2>
+        <p class="hint">These values are applied to the chat whenever you submit a prompt.</p>
+        <form id="chatContextForm" class="context-grid" novalidate>
+          <label class="field">
+            <span>Site name</span>
+            <input id="contextSiteName" type="text" value="Beliv Demo Docs" />
+          </label>
+          <label class="field">
+            <span>Theme</span>
+            <select id="contextTheme">
+              <option value="light" selected>Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </label>
+          <label class="field field-wide">
+            <span>Current URL</span>
+            <input id="contextCurrentUrl" type="url" value="https://demo.beliv.io/docs/getting-started" />
+          </label>
+        </form>
+      </section>
+
+      <section class="card">
+        <strong>Embed snippet:</strong>
+        <pre><code>&lt;script src="https://widget.beliv.io/ai-agent-chat-loader.js"&gt;&lt;/script&gt;</code></pre>
+      </section>
+    </main>
+
+    <script>
+      window.BelivAIAgentConfig = {
+        title: "Website AI Helper",
+        siteName: "Beliv Demo Docs",
+        theme: "light",
+        currentUrl: "https://demo.beliv.io/docs/getting-started",
+        subtitle: "Instant answers from your website knowledge base.",
+        launcherPlaceholder: "Ask anything about this website...",
+        popupPlaceholder: "Continue the conversation...",
+        launcherButtonLabel: "Ask",
+        popupButtonLabel: "Send",
+        position: "bottom-right",
+        endpoint: "https://app.beliv.io/webhook/ai-chat-prompt",
+        payload: {
+          source: "demo-host-page"
+        }
+      };
+    </script>
+    <script src="./ai-agent-chat-loader.js"></script>
+    <script>
+      (function () {
+        var contextForm = document.getElementById("chatContextForm");
+        var siteNameInput = document.getElementById("contextSiteName");
+        var themeInput = document.getElementById("contextTheme");
+        var currentUrlInput = document.getElementById("contextCurrentUrl");
+
+        function syncContextToWidget() {
+          var nextContext = {
+            siteName: (siteNameInput.value || "").trim(),
+            theme: themeInput.value || "light",
+            currentUrl: (currentUrlInput.value || "").trim()
+          };
+
+          window.BelivAIAgentConfig.siteName = nextContext.siteName;
+          window.BelivAIAgentConfig.theme = nextContext.theme;
+          window.BelivAIAgentConfig.currentUrl = nextContext.currentUrl;
+
+          if (window.BelivAIAgent && typeof window.BelivAIAgent.updateContext === "function") {
+            window.BelivAIAgent.updateContext(nextContext);
+          }
+        }
+
+        contextForm.addEventListener("input", syncContextToWidget);
+        contextForm.addEventListener("change", syncContextToWidget);
+        contextForm.addEventListener("submit", function (event) {
+          event.preventDefault();
+          syncContextToWidget();
+        });
+
+        syncContextToWidget();
+      })();
+    </script>
+  </body>
+</html>
