@@ -57,11 +57,12 @@ GitHub Actions workflow:
 - [.github/workflows/deploy-widget.yml](/Users/primozfrelih/Documents/My Codex projects/SAAS AI Agent/.github/workflows/deploy-widget.yml)
 
 Behavior:
-- On every push to `main`, deploys `ai-agent-chat-loader.js` and `demo-host.html` to GitHub Pages.
-- Published script path on Pages: `/ai-agent-chat-loader.js`
-- Demo page path on Pages: `/` (from `demo-host.html` as `index.html`)
+- On every push to `main`, updates a rolling prerelease tag: `widget-latest`.
+- Uploaded deploy assets:
+  - `ai-agent-chat-loader.js`
+  - `demo-host.html`
 
-For `widget.beliv.io`, set a custom domain in GitHub Pages settings and add a `CNAME` file in repo root (workflow copies it automatically).
+This gives you one always-current deployment package without creating a new version tag each time.
 
 ## Versioned releases
 

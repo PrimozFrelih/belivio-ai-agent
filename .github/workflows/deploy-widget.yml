@@ -12,40 +12,34 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
+  contents: write
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Prepare static artifact
+      - name: Prepare deploy assets
         run: |
-          mkdir -p public
-          cp ai-agent-chat-loader.js public/ai-agent-chat-loader.js
-          cp demo-host.html public/index.html
-          if [ -f CNAME ]; then cp CNAME public/CNAME; fi
+          mkdir -p dist
+          cp ai-agent-chat-loader.js dist/ai-agent-chat-loader.js
+          cp demo-host.html dist/demo-host.html
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: public
+      - name: Publish rolling deployment release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="widget-latest"
+          notes="Automated deployment from main at commit ${GITHUB_SHA}."
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          if gh release view "${tag}" >/dev/null 2>&1; then
+            gh release upload "${tag}" dist/ai-agent-chat-loader.js dist/demo-host.html --clobber
+            gh release edit "${tag}" --title "Widget Latest" --notes "${notes}" --prerelease
+          else
+            gh release create "${tag}" dist/ai-agent-chat-loader.js dist/demo-host.html \
+              --title "Widget Latest" \
+              --notes "${notes}" \
+              --prerelease
+          fi
