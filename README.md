@@ -51,6 +51,36 @@ The widget reads `siteName`, `theme`, and `currentUrl` at prompt submit time, so
 
 Open [demo-host.html](/Users/primozfrelih/Documents/My Codex projects/SAAS AI Agent/demo-host.html) in a browser.
 
+## Auto deploy
+
+GitHub Actions workflow:
+- [.github/workflows/deploy-widget.yml](/Users/primozfrelih/Documents/My Codex projects/SAAS AI Agent/.github/workflows/deploy-widget.yml)
+
+Behavior:
+- On every push to `main`, deploys `ai-agent-chat-loader.js` and `demo-host.html` to GitHub Pages.
+- Published script path on Pages: `/ai-agent-chat-loader.js`
+- Demo page path on Pages: `/` (from `demo-host.html` as `index.html`)
+
+For `widget.beliv.io`, set a custom domain in GitHub Pages settings and add a `CNAME` file in repo root (workflow copies it automatically).
+
+## Versioned releases
+
+GitHub Actions workflow:
+- [.github/workflows/release-widget.yml](/Users/primozfrelih/Documents/My Codex projects/SAAS AI Agent/.github/workflows/release-widget.yml)
+
+Behavior:
+- Any tag starting with `v` publishes a GitHub Release and uploads:
+  - `ai-agent-chat-loader.js`
+  - `demo-host.html`
+  - `README.md`
+
+Create a release:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
 ## Config options
 
 - `title`

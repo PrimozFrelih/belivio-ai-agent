@@ -1,0 +1,33 @@
+name: Release Widget
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release
+          cp ai-agent-chat-loader.js release/ai-agent-chat-loader.js
+          cp demo-host.html release/demo-host.html
+          cp README.md release/README.md
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            release/ai-agent-chat-loader.js
+            release/demo-host.html
+            release/README.md
