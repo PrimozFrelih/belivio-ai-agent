@@ -68,7 +68,7 @@
     accentColor: normalizeColor(runtimeConfig.accentColor, DEFAULT_CONFIG.accentColor),
     accentColorDark: normalizeColor(runtimeConfig.accentColorDark, DEFAULT_CONFIG.accentColorDark),
     textColor: normalizeColor(runtimeConfig.textColor, DEFAULT_CONFIG.textColor),
-    position: runtimeConfig.position === "bottom-left" ? "bottom-left" : "bottom-right",
+    position: normalizePosition(runtimeConfig.position, DEFAULT_CONFIG.position),
     zIndex: normalizeNumber(runtimeConfig.zIndex, DEFAULT_CONFIG.zIndex),
     popupWidth: normalizeSize(runtimeConfig.popupWidth, "420px", 320),
     popupHeight: normalizeSize(runtimeConfig.popupHeight, "620px", 360),
@@ -94,9 +94,11 @@
   var refs = {
     hostRoot: null,
     shell: null,
+    titleText: null,
     launcherForm: null,
     launcherInput: null,
     launcherButton: null,
+    floatButton: null,
     modal: null,
     closeButton: null,
     messages: null,
@@ -131,6 +133,9 @@
       '    <input class="beliv-launcher-input" type="text" autocomplete="off" />' +
       '    <button class="beliv-launcher-submit" type="submit"></button>' +
       "  </form>" +
+      '  <button class="beliv-float-trigger" type="button" aria-label="Open AI assistant">' +
+      '    <span class="beliv-float-face"><i></i><i></i><b></b></span>' +
+      "  </button>" +
       '  <div class="beliv-modal" aria-hidden="true">' +
       '    <div class="beliv-overlay" data-action="close"></div>' +
       '    <section class="beliv-panel" role="dialog" aria-modal="true">' +
@@ -154,12 +159,14 @@
     placeHostRoot();
 
     refs.shell = root.querySelector(".beliv-shell");
-    refs.shell.classList.add(config.position === "bottom-left" ? "beliv-left" : "beliv-right");
+    syncPositionClass();
     syncThemeClass();
     syncModeClass();
+    refs.titleText = root.querySelector(".beliv-title");
     refs.launcherForm = root.querySelector(".beliv-launcher");
     refs.launcherInput = root.querySelector(".beliv-launcher-input");
     refs.launcherButton = root.querySelector(".beliv-launcher-submit");
+    refs.floatButton = root.querySelector(".beliv-float-trigger");
     refs.modal = root.querySelector(".beliv-modal");
     refs.closeButton = root.querySelector(".beliv-close");
     refs.messages = root.querySelector(".beliv-messages");
@@ -168,7 +175,7 @@
     refs.chatInput = root.querySelector(".beliv-chat-input");
     refs.chatButton = root.querySelector(".beliv-chat-submit");
 
-    root.querySelector(".beliv-title").textContent = config.title;
+    refs.titleText.textContent = config.title;
     refs.subtitleText.textContent = config.subtitle;
     root.querySelector(".beliv-brand").textContent = config.brandLabel;
     refs.launcherInput.placeholder = config.launcherPlaceholder;
@@ -206,6 +213,10 @@
       }
       refs.chatInput.value = "";
       sendPrompt(prompt);
+    });
+
+    refs.floatButton.addEventListener("click", function () {
+      openModal();
     });
 
     refs.closeButton.addEventListener("click", function () {
@@ -259,6 +270,10 @@
     refs.modal.classList.remove("beliv-open");
     refs.modal.setAttribute("aria-hidden", "true");
     refs.shell.classList.remove("beliv-open");
+    if (config.mode === "popupfloat" && refs.floatButton) {
+      refs.floatButton.focus();
+      return;
+    }
     refs.launcherInput.focus();
   }
 
@@ -501,6 +516,12 @@
           window.BelivAIAgentConfig = {};
         }
         if (isPlainObject(nextContext)) {
+          if (Object.prototype.hasOwnProperty.call(nextContext, "title")) {
+            window.BelivAIAgentConfig.title = nextContext.title;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "subtitle")) {
+            window.BelivAIAgentConfig.subtitle = nextContext.subtitle;
+          }
           if (Object.prototype.hasOwnProperty.call(nextContext, "siteName")) {
             window.BelivAIAgentConfig.siteName = nextContext.siteName;
           }
@@ -509,6 +530,9 @@
           }
           if (Object.prototype.hasOwnProperty.call(nextContext, "theme")) {
             window.BelivAIAgentConfig.theme = nextContext.theme;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "position")) {
+            window.BelivAIAgentConfig.position = nextContext.position;
           }
           if (Object.prototype.hasOwnProperty.call(nextContext, "mode")) {
             window.BelivAIAgentConfig.mode = nextContext.mode;
@@ -560,9 +584,12 @@
   function readLiveContextOverrides() {
     var liveConfig = isPlainObject(window.BelivAIAgentConfig) ? window.BelivAIAgentConfig : {};
     return {
+      title: liveConfig.title,
+      subtitle: liveConfig.subtitle,
       siteName: liveConfig.siteName,
       domain: liveConfig.domain,
       theme: liveConfig.theme,
+      position: liveConfig.position,
       mode: liveConfig.mode,
       hostSelector: liveConfig.hostSelector,
       hostPlacement: liveConfig.hostPlacement,
@@ -576,8 +603,12 @@
     }
 
     var previousMode = config.mode;
+    var hasSubtitleOverride = Object.prototype.hasOwnProperty.call(nextContext, "subtitle");
+    var nextTitle = normalizeText(nextContext.title, config.title);
+    var nextSubtitle = normalizeText(nextContext.subtitle, config.subtitle);
     var nextSiteName = normalizeText(nextContext.siteName, config.siteName);
     var nextTheme = normalizeTheme(nextContext.theme, config.theme);
+    var nextPosition = normalizePosition(nextContext.position, config.position);
     var nextMode = normalizeMode(nextContext.mode, config.mode);
     var nextHostSelector = normalizeSelector(nextContext.hostSelector, config.hostSelector);
     var nextHostPlacement = normalizeHostPlacement(nextContext.hostPlacement, config.hostPlacement);
@@ -586,24 +617,32 @@
       domainFromUrl(nextCurrentUrl) || config.domain || window.location.hostname || "";
     var nextDomain = normalizeDomain(nextContext.domain, nextDomainFallback);
 
+    config.title = nextTitle;
     config.siteName = nextSiteName;
     config.domain = nextDomain;
     config.theme = nextTheme;
+    config.position = nextPosition;
     config.mode = nextMode;
     config.hostSelector = nextHostSelector;
     config.hostPlacement = nextHostPlacement;
     config.currentUrl = nextCurrentUrl;
 
-    if (autoSubtitle) {
+    if (autoSubtitle && !hasSubtitleOverride) {
       config.subtitle = "Ask anything about " + config.siteName + ".";
+    } else {
+      config.subtitle = nextSubtitle;
     }
     if (autoWelcomeMessage) {
       config.welcomeMessage = "Hi! I can help you find information from " + config.siteName + ".";
     }
 
+    if (refs.titleText) {
+      refs.titleText.textContent = config.title;
+    }
     if (refs.subtitleText) {
       refs.subtitleText.textContent = config.subtitle;
     }
+    syncPositionClass();
     syncThemeClass();
     syncModeClass();
     placeHostRoot();
@@ -621,10 +660,25 @@
     }
   }
 
+  function syncPositionClass() {
+    if (refs.shell) {
+      refs.shell.classList.remove("beliv-left", "beliv-right");
+      refs.shell.classList.add(config.position === "bottom-left" ? "beliv-left" : "beliv-right");
+    }
+  }
+
   function syncModeClass() {
     if (refs.shell) {
-      refs.shell.classList.remove("beliv-mode-compact", "beliv-mode-fullcenter");
-      refs.shell.classList.add(config.mode === "fullcenter" ? "beliv-mode-fullcenter" : "beliv-mode-compact");
+      refs.shell.classList.remove("beliv-mode-compact", "beliv-mode-fullcenter", "beliv-mode-popupfloat");
+      if (config.mode === "fullcenter") {
+        refs.shell.classList.add("beliv-mode-fullcenter");
+        return;
+      }
+      if (config.mode === "popupfloat") {
+        refs.shell.classList.add("beliv-mode-popupfloat");
+        return;
+      }
+      refs.shell.classList.add("beliv-mode-compact");
     }
   }
 
@@ -633,7 +687,7 @@
       return;
     }
 
-    var target = resolveHostTarget();
+    var target = config.mode === "fullcenter" ? resolveHostTarget() : document.body;
     if (!target) {
       target = document.body;
     }
@@ -697,10 +751,24 @@
     return fallback;
   }
 
+  function normalizePosition(value, fallback) {
+    var normalized = String(value || "").trim().toLowerCase();
+    if (normalized === "bottom-left") {
+      return "bottom-left";
+    }
+    if (normalized === "bottom-right") {
+      return "bottom-right";
+    }
+    return fallback;
+  }
+
   function normalizeMode(value, fallback) {
     var normalized = String(value || "").trim().toLowerCase();
     if (normalized === "fullcenter") {
       return "fullcenter";
+    }
+    if (normalized === "popupfloat") {
+      return "popupfloat";
     }
     if (normalized === "compact") {
       return "compact";
@@ -849,6 +917,65 @@
       "  transform:none;" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-close{" +
+      "  display:none;" +
+      "}" +
+      ".beliv-float-trigger{" +
+      "  display:none;" +
+      "  border:0;" +
+      "  width:64px;" +
+      "  height:64px;" +
+      "  border-radius:999px;" +
+      "  cursor:pointer;" +
+      "  align-items:center;" +
+      "  justify-content:center;" +
+      "  background:linear-gradient(145deg,var(--beliv-accent),var(--beliv-accent-dark));" +
+      "  box-shadow:0 18px 34px rgba(5,14,24,0.22);" +
+      "  z-index:var(--beliv-z-index);" +
+      "  transition:transform .2s ease,opacity .2s ease;" +
+      "}" +
+      ".beliv-float-trigger:hover{" +
+      "  transform:translateY(-2px);" +
+      "}" +
+      ".beliv-float-face{" +
+      "  width:28px;" +
+      "  height:24px;" +
+      "  border:2px solid rgba(255,255,255,0.96);" +
+      "  border-radius:8px;" +
+      "  position:relative;" +
+      "  display:block;" +
+      "}" +
+      ".beliv-float-face i{" +
+      "  position:absolute;" +
+      "  top:6px;" +
+      "  width:5px;" +
+      "  height:5px;" +
+      "  border-radius:50%;" +
+      "  background:#ffffff;" +
+      "}" +
+      ".beliv-float-face i:nth-child(1){left:6px;}" +
+      ".beliv-float-face i:nth-child(2){right:6px;}" +
+      ".beliv-float-face b{" +
+      "  position:absolute;" +
+      "  left:6px;" +
+      "  right:6px;" +
+      "  bottom:5px;" +
+      "  height:3px;" +
+      "  border-radius:999px;" +
+      "  background:#ffffff;" +
+      "}" +
+      ".beliv-shell.beliv-mode-popupfloat .beliv-float-trigger{" +
+      "  display:flex;" +
+      "  position:fixed;" +
+      "  bottom:20px;" +
+      "}" +
+      ".beliv-shell.beliv-mode-popupfloat.beliv-right .beliv-float-trigger{right:20px;}" +
+      ".beliv-shell.beliv-mode-popupfloat.beliv-left .beliv-float-trigger{left:20px;}" +
+      ".beliv-shell.beliv-mode-popupfloat.beliv-open .beliv-float-trigger{" +
+      "  opacity:0;" +
+      "  pointer-events:none;" +
+      "  transform:translateY(10px) scale(.92);" +
+      "}" +
+      ".beliv-shell.beliv-mode-popupfloat .beliv-launcher{" +
       "  display:none;" +
       "}" +
       ".beliv-launcher{" +
@@ -1110,6 +1237,9 @@
       "    width:100%;" +
       "    height:min(var(--beliv-popup-height),78vh);" +
       "    border-radius:14px;" +
+      "  }" +
+      "  .beliv-shell.beliv-mode-popupfloat .beliv-float-trigger{" +
+      "    bottom:12px;" +
       "  }" +
       "}"
     );

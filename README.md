@@ -20,7 +20,7 @@ Optional config before the script:
     siteName: "Acme Help Center",
     domain: "acme.com",
     theme: "light", // "light" or "dark"
-    mode: "compact", // "compact" or "fullcenter"
+    mode: "popupfloat", // "compact", "fullcenter", or "popupfloat"
     hostSelector: "#widgetMount",
     hostPlacement: "append", // "append" or "prepend"
     currentUrl: "https://acme.com/pricing",
@@ -44,13 +44,14 @@ The widget reads these at prompt submit time, so you can expose them as page inp
 - `currentUrl`
 
 `mode="fullcenter"` renders the chat inside `hostSelector` and uses the available width of that container.
+`mode="popupfloat"` shows a floating agent icon button that opens the popup chat.
 
 ```html
 <script>
   window.BelivAIAgentConfig.siteName = "Acme Help Center";
   window.BelivAIAgentConfig.domain = "docs.acme.com";
   window.BelivAIAgentConfig.theme = "dark";
-  window.BelivAIAgentConfig.mode = "fullcenter";
+  window.BelivAIAgentConfig.mode = "popupfloat";
   window.BelivAIAgentConfig.hostSelector = "#widgetMount";
   window.BelivAIAgentConfig.hostPlacement = "prepend";
   window.BelivAIAgentConfig.currentUrl = "https://acme.com/docs/pricing";
@@ -110,7 +111,7 @@ git push origin v1.0.0
 - `siteName`
 - `domain`
 - `theme` (`light` or `dark`)
-- `mode` (`compact` or `fullcenter`)
+- `mode` (`compact`, `fullcenter`, or `popupfloat`)
 - `hostSelector` (id, class, or tag selector)
 - `hostPlacement` (`append` or `prepend`)
 - `currentUrl`

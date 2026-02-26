@@ -3,90 +3,225 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Beliv AI Agent Widget Demo</title>
+    <title>Beliv AI Agent Widget Showcase</title>
     <style>
+      :root {
+        --bg-a: #f2faf6;
+        --bg-b: #f4f7fd;
+        --bg-c: #fffdf8;
+        --card: #ffffffdd;
+        --line: #cfe0ea;
+        --text: #142638;
+        --muted: #4e6478;
+        --accent: #0f766e;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
       body {
         margin: 0;
         font-family: "Manrope", "Segoe UI", sans-serif;
-        color: #122233;
-        background: linear-gradient(170deg, #eef7f4 0%, #f3f8fd 45%, #fffef9 100%);
+        color: var(--text);
+        background:
+          radial-gradient(1200px 500px at 5% -20%, #cce8dd 0%, transparent 60%),
+          radial-gradient(1000px 500px at 100% 0%, #dfe9f8 0%, transparent 60%),
+          linear-gradient(170deg, var(--bg-a) 0%, var(--bg-b) 50%, var(--bg-c) 100%);
+        min-height: 100vh;
       }
+
       .page {
-        max-width: 920px;
+        max-width: 1280px;
         margin: 0 auto;
-        padding: 56px 18px 120px;
+        padding: 36px 18px 52px;
       }
-      h1 {
-        margin: 0 0 10px;
-        font-size: 36px;
-      }
-      h2 {
+
+      .hero h1 {
         margin: 0;
-        font-size: 22px;
+        font-size: clamp(34px, 6vw, 56px);
+        letter-spacing: -0.02em;
+        line-height: 1.04;
       }
-      p {
-        margin: 0 0 12px;
-        line-height: 1.6;
+
+      .hero p {
+        margin: 14px 0 0;
+        max-width: 820px;
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1.55;
       }
+
+      .layout {
+        margin-top: 22px;
+        display: grid;
+        grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+        gap: 18px;
+      }
+
       .card {
-        margin-top: 28px;
-        border: 1px solid #dbe8ee;
-        border-radius: 14px;
-        padding: 16px;
-        background: #ffffffd9;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--card);
+        backdrop-filter: blur(2px);
       }
-      .context-grid {
+
+      .controls {
+        padding: 18px;
+      }
+
+      .controls h2 {
+        margin: 0;
+        font-size: 24px;
+      }
+
+      .controls .hint {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .form-grid {
         margin-top: 14px;
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
       }
+
       .field {
         display: flex;
         flex-direction: column;
         gap: 6px;
-        font-size: 13px;
-        font-weight: 700;
-        color: #2d4252;
       }
+
       .field-wide {
         grid-column: 1 / -1;
       }
+
+      .field label {
+        font-size: 12px;
+        font-weight: 800;
+        color: #385066;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
       .field input,
       .field select {
-        height: 40px;
-        border: 1px solid #c9d9e3;
-        border-radius: 10px;
+        height: 42px;
+        border: 1px solid #bfd2df;
+        border-radius: 11px;
         padding: 0 12px;
-        background: #ffffff;
-        color: #132638;
         font-size: 14px;
+        color: #173046;
+        background: #ffffff;
         outline: none;
       }
+
       .field input:focus,
       .field select:focus {
-        border-color: #0f766e;
-        box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
       }
-      .hint {
-        margin-top: 10px;
-        margin-bottom: 0;
-        color: #4b6072;
+
+      .preview-column {
+        display: grid;
+        gap: 18px;
+      }
+
+      .preview {
+        padding: 18px;
+      }
+
+      .preview h2 {
+        margin: 0;
+        font-size: 24px;
+      }
+
+      .preview p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .mount {
+        margin-top: 14px;
+        min-height: 460px;
+        border: 1px dashed #aec5d5;
+        border-radius: 14px;
+        background:
+          linear-gradient(140deg, #f7fcfa 0%, #f6f9ff 52%, #fefdfa 100%);
+        padding: 12px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .mount::before {
+        content: "#widgetMount";
+        position: absolute;
+        left: 12px;
+        top: 10px;
+        font-size: 12px;
+        font-weight: 800;
+        color: #577088;
+        letter-spacing: 0.04em;
+      }
+
+      .snippet {
+        padding: 18px;
+      }
+
+      .snippet-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .snippet h2 {
+        margin: 0;
+        font-size: 24px;
+      }
+
+      .copy-btn {
+        border: 0;
+        border-radius: 10px;
+        height: 38px;
+        padding: 0 12px;
+        color: #ffffff;
+        font-weight: 800;
+        cursor: pointer;
+        background: linear-gradient(140deg, #0f766e, #0b5f59);
+      }
+
+      pre {
+        margin: 12px 0 0;
+        border: 1px solid #d6e4ed;
+        border-radius: 12px;
+        background: #f9fbff;
+        padding: 12px;
+        overflow: auto;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 13px;
+        line-height: 1.5;
+        color: #1f3549;
+      }
+
+      .copy-status {
+        min-height: 20px;
+        margin: 8px 0 0;
+        color: #4f6578;
         font-size: 13px;
       }
-      .mount-target {
-        margin-top: 14px;
-        min-height: 420px;
-        border: 1px dashed #bfd1dc;
-        border-radius: 12px;
-        background: linear-gradient(180deg, #f7fcfb 0%, #f9fbfe 100%);
-        padding: 12px;
+
+      @media (max-width: 1080px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
       }
-      code {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      }
-      @media (max-width: 760px) {
-        .context-grid {
+
+      @media (max-width: 680px) {
+        .form-grid {
           grid-template-columns: 1fr;
         }
         .field-wide {
@@ -97,140 +232,215 @@
   </head>
   <body>
     <main class="page">
-      <h1>Host Site Content</h1>
-      <p>
-        This page simulates a host website with many sections and documents. The embedded AI widget
-        helps users quickly find relevant details instead of browsing manually.
-      </p>
-      <p>
-        Example user prompts: "How do I reset my password?", "Where can I see pricing?", "How do I
-        contact support?".
-      </p>
-
-      <section class="card">
-        <h2>Chat Context Fields</h2>
-        <p class="hint">These values are applied to the chat whenever you submit a prompt.</p>
-        <form id="chatContextForm" class="context-grid" novalidate>
-          <label class="field">
-            <span>Site name</span>
-            <input id="contextSiteName" type="text" value="Beliv Demo Docs" />
-          </label>
-          <label class="field">
-            <span>Domain</span>
-            <input id="contextDomain" type="text" value="demo.beliv.io" />
-          </label>
-          <label class="field">
-            <span>Theme</span>
-            <select id="contextTheme">
-              <option value="light" selected>Light</option>
-              <option value="dark">Dark</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>Mode</span>
-            <select id="contextMode">
-              <option value="compact" selected>Compact</option>
-              <option value="fullcenter">Fullcenter</option>
-            </select>
-          </label>
-          <label class="field field-wide">
-            <span>Current URL</span>
-            <input id="contextCurrentUrl" type="url" value="https://demo.beliv.io/docs/getting-started" />
-          </label>
-          <label class="field field-wide">
-            <span>Host selector</span>
-            <input id="contextHostSelector" type="text" value="#widgetMount" />
-          </label>
-          <label class="field">
-            <span>Host placement</span>
-            <select id="contextHostPlacement">
-              <option value="append" selected>Append</option>
-              <option value="prepend">Top (prepend)</option>
-            </select>
-          </label>
-        </form>
-      </section>
-
-      <section class="card">
-        <h2>Widget Mount Target</h2>
-        <p class="hint">
-          In <code>fullcenter</code> mode the chat renders inside this container and takes its width.
+      <section class="hero">
+        <h1>Beliv AI Agent Widget Showcase</h1>
+        <p>
+          Configure the widget in real time, test all modes (`compact`, `fullcenter`,
+          `popupfloat`), and copy the exact embed snippet you can paste into your host website.
         </p>
-        <div id="widgetMount" class="mount-target"></div>
       </section>
 
-      <section class="card">
-        <strong>Embed snippet:</strong>
-        <pre><code>&lt;script src="https://widget.beliv.io/ai-agent-chat-loader.js"&gt;&lt;/script&gt;</code></pre>
+      <section class="layout">
+        <aside class="controls card">
+          <h2>Configuration Panel</h2>
+          <p class="hint">
+            Changes are applied to the live widget. On prompt submit, current context values are sent
+            to your webhook.
+          </p>
+
+          <form id="configForm" class="form-grid" novalidate>
+            <div class="field field-wide">
+              <label for="cfgTitle">Widget Title</label>
+              <input id="cfgTitle" type="text" value="Website AI Helper" />
+            </div>
+            <div class="field field-wide">
+              <label for="cfgSubtitle">Widget Subtitle</label>
+              <input id="cfgSubtitle" type="text" value="Instant answers from your website knowledge base." />
+            </div>
+            <div class="field">
+              <label for="cfgSiteName">Site Name</label>
+              <input id="cfgSiteName" type="text" value="Beliv Demo Docs" />
+            </div>
+            <div class="field">
+              <label for="cfgDomain">Domain</label>
+              <input id="cfgDomain" type="text" value="demo.beliv.io" />
+            </div>
+            <div class="field">
+              <label for="cfgTheme">Theme</label>
+              <select id="cfgTheme">
+                <option value="light" selected>light</option>
+                <option value="dark">dark</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="cfgMode">Mode</label>
+              <select id="cfgMode">
+                <option value="compact">compact</option>
+                <option value="fullcenter">fullcenter</option>
+                <option value="popupfloat" selected>popupfloat</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="cfgPosition">Position</label>
+              <select id="cfgPosition">
+                <option value="bottom-right" selected>bottom-right</option>
+                <option value="bottom-left">bottom-left</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="cfgHostPlacement">Host Placement</label>
+              <select id="cfgHostPlacement">
+                <option value="append" selected>append</option>
+                <option value="prepend">prepend</option>
+              </select>
+            </div>
+            <div class="field field-wide">
+              <label for="cfgHostSelector">Host Selector</label>
+              <input id="cfgHostSelector" type="text" value="#widgetMount" />
+            </div>
+            <div class="field field-wide">
+              <label for="cfgCurrentUrl">Current URL</label>
+              <input id="cfgCurrentUrl" type="url" value="https://demo.beliv.io/docs/getting-started" />
+            </div>
+          </form>
+        </aside>
+
+        <div class="preview-column">
+          <section class="preview card">
+            <h2>Live Host Surface</h2>
+            <p>
+              `fullcenter` mode uses this container width (`#widgetMount`). `popupfloat` shows an agent
+              icon button that opens the chat popup.
+            </p>
+            <div id="widgetMount" class="mount"></div>
+          </section>
+
+          <section class="snippet card">
+            <div class="snippet-head">
+              <h2>Implementable Embed Snippet</h2>
+              <button id="copySnippetBtn" class="copy-btn" type="button">Copy Snippet</button>
+            </div>
+            <pre id="embedSnippet"></pre>
+            <p id="copyStatus" class="copy-status"></p>
+          </section>
+        </div>
       </section>
     </main>
 
     <script>
       window.BelivAIAgentConfig = {
         title: "Website AI Helper",
+        subtitle: "Instant answers from your website knowledge base.",
         siteName: "Beliv Demo Docs",
         domain: "demo.beliv.io",
         theme: "light",
-        mode: "compact",
+        mode: "popupfloat",
+        position: "bottom-right",
         hostSelector: "#widgetMount",
         hostPlacement: "append",
         currentUrl: "https://demo.beliv.io/docs/getting-started",
-        subtitle: "Instant answers from your website knowledge base.",
         launcherPlaceholder: "Ask anything about this website...",
         popupPlaceholder: "Continue the conversation...",
         launcherButtonLabel: "Ask",
         popupButtonLabel: "Send",
-        position: "bottom-right",
         endpoint: "https://app.beliv.io/webhook/ai-chat-prompt",
         payload: {
-          source: "demo-host-page"
+          source: "demo-host-showcase"
         }
       };
     </script>
     <script src="./ai-agent-chat-loader.js"></script>
     <script>
       (function () {
-        var contextForm = document.getElementById("chatContextForm");
-        var siteNameInput = document.getElementById("contextSiteName");
-        var domainInput = document.getElementById("contextDomain");
-        var themeInput = document.getElementById("contextTheme");
-        var modeInput = document.getElementById("contextMode");
-        var currentUrlInput = document.getElementById("contextCurrentUrl");
-        var hostSelectorInput = document.getElementById("contextHostSelector");
-        var hostPlacementInput = document.getElementById("contextHostPlacement");
+        var form = document.getElementById("configForm");
+        var snippet = document.getElementById("embedSnippet");
+        var copyButton = document.getElementById("copySnippetBtn");
+        var copyStatus = document.getElementById("copyStatus");
 
-        function syncContextToWidget() {
-          var nextContext = {
-            siteName: (siteNameInput.value || "").trim(),
-            domain: (domainInput.value || "").trim(),
-            theme: themeInput.value || "light",
-            mode: modeInput.value || "compact",
-            hostSelector: (hostSelectorInput.value || "").trim(),
-            hostPlacement: hostPlacementInput.value || "append",
-            currentUrl: (currentUrlInput.value || "").trim()
+        function readValue(id) {
+          var element = document.getElementById(id);
+          return element ? (element.value || "").trim() : "";
+        }
+
+        function readConfigFromForm() {
+          return {
+            title: readValue("cfgTitle"),
+            subtitle: readValue("cfgSubtitle"),
+            siteName: readValue("cfgSiteName"),
+            domain: readValue("cfgDomain"),
+            theme: readValue("cfgTheme") || "light",
+            mode: readValue("cfgMode") || "compact",
+            position: readValue("cfgPosition") || "bottom-right",
+            hostSelector: readValue("cfgHostSelector"),
+            hostPlacement: readValue("cfgHostPlacement") || "append",
+            currentUrl: readValue("cfgCurrentUrl")
+          };
+        }
+
+        function buildImplementableSnippet(config) {
+          var snippetConfig = {
+            title: config.title,
+            subtitle: config.subtitle,
+            siteName: config.siteName,
+            domain: config.domain,
+            theme: config.theme,
+            mode: config.mode,
+            position: config.position,
+            hostSelector: config.hostSelector,
+            hostPlacement: config.hostPlacement,
+            currentUrl: config.currentUrl,
+            launcherPlaceholder: window.BelivAIAgentConfig.launcherPlaceholder,
+            popupPlaceholder: window.BelivAIAgentConfig.popupPlaceholder,
+            launcherButtonLabel: window.BelivAIAgentConfig.launcherButtonLabel,
+            popupButtonLabel: window.BelivAIAgentConfig.popupButtonLabel,
+            endpoint: window.BelivAIAgentConfig.endpoint
           };
 
-          window.BelivAIAgentConfig.siteName = nextContext.siteName;
-          window.BelivAIAgentConfig.domain = nextContext.domain;
-          window.BelivAIAgentConfig.theme = nextContext.theme;
-          window.BelivAIAgentConfig.mode = nextContext.mode;
-          window.BelivAIAgentConfig.hostSelector = nextContext.hostSelector;
-          window.BelivAIAgentConfig.hostPlacement = nextContext.hostPlacement;
-          window.BelivAIAgentConfig.currentUrl = nextContext.currentUrl;
+          return [
+            "<script>",
+            "window.BelivAIAgentConfig = " + JSON.stringify(snippetConfig, null, 2) + ";",
+            "<\\/script>",
+            '<script src="https://widget.beliv.io/ai-agent-chat-loader.js"><\\/script>'
+          ].join("\n");
+        }
+
+        function applyShowcaseConfig() {
+          var config = readConfigFromForm();
+
+          Object.assign(window.BelivAIAgentConfig, config);
 
           if (window.BelivAIAgent && typeof window.BelivAIAgent.updateContext === "function") {
-            window.BelivAIAgent.updateContext(nextContext);
+            window.BelivAIAgent.updateContext({
+              title: config.title,
+              subtitle: config.subtitle,
+              siteName: config.siteName,
+              domain: config.domain,
+              theme: config.theme,
+              mode: config.mode,
+              position: config.position,
+              hostSelector: config.hostSelector,
+              hostPlacement: config.hostPlacement,
+              currentUrl: config.currentUrl
+            });
+          }
+
+          snippet.textContent = buildImplementableSnippet(config);
+        }
+
+        async function copySnippet() {
+          try {
+            await navigator.clipboard.writeText(snippet.textContent);
+            copyStatus.textContent = "Embed snippet copied.";
+          } catch (error) {
+            copyStatus.textContent = "Copy failed. Select and copy manually.";
           }
         }
 
-        contextForm.addEventListener("input", syncContextToWidget);
-        contextForm.addEventListener("change", syncContextToWidget);
-        contextForm.addEventListener("submit", function (event) {
-          event.preventDefault();
-          syncContextToWidget();
-        });
+        form.addEventListener("input", applyShowcaseConfig);
+        form.addEventListener("change", applyShowcaseConfig);
+        copyButton.addEventListener("click", copySnippet);
 
-        syncContextToWidget();
+        applyShowcaseConfig();
       })();
     </script>
   </body>
