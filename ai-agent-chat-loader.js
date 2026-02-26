@@ -1338,11 +1338,13 @@
       "}" +
       ".beliv-heading{" +
       "  min-width:0;" +
+      "  flex:1;" +
       "  display:flex;" +
       "  align-items:flex-start;" +
       "  gap:10px;" +
       "}" +
       ".beliv-heading-copy{" +
+      "  flex:1;" +
       "  min-width:0;" +
       "}" +
       ".beliv-site-favicon{" +
@@ -1359,10 +1361,13 @@
       "  margin:0 0 4px 0;" +
       "  font-size:18px;" +
       "  line-height:1.2;" +
+      "  overflow-wrap:anywhere;" +
       "}" +
       ".beliv-subtitle{" +
       "  margin:0;" +
       "  font-size:13px;" +
+      "  line-height:1.35;" +
+      "  overflow-wrap:anywhere;" +
       "  opacity:.94;" +
       "}" +
       ".beliv-close{" +
@@ -1375,6 +1380,7 @@
       "  cursor:pointer;" +
       "  font-size:22px;" +
       "  line-height:1;" +
+      "  flex:0 0 auto;" +
       "  box-shadow:0 6px 16px rgba(8,18,48,0.22);" +
       "}" +
       ".beliv-messages{" +
@@ -1636,7 +1642,7 @@
       "    border-radius:6px;" +
       "  }" +
       "  .beliv-title{" +
-      "    font-size:19px;" +
+      "    font-size:18px;" +
       "  }" +
       "  .beliv-subtitle{" +
       "    font-size:13px;" +
@@ -1673,6 +1679,49 @@
       "  }" +
       "  .beliv-shell.beliv-mode-popupfloat.beliv-right .beliv-float-trigger{right:10px;}" +
       "  .beliv-shell.beliv-mode-popupfloat.beliv-left .beliv-float-trigger{left:10px;}" +
+      "}" +
+      "@media (max-width:480px){" +
+      "  .beliv-header{" +
+      "    padding:13px 12px 12px;" +
+      "    gap:10px;" +
+      "  }" +
+      "  .beliv-heading{" +
+      "    gap:7px;" +
+      "  }" +
+      "  .beliv-site-favicon{" +
+      "    width:22px;" +
+      "    height:22px;" +
+      "    flex-basis:22px;" +
+      "    border-radius:6px;" +
+      "  }" +
+      "  .beliv-title{" +
+      "    font-size:16px;" +
+      "    margin-bottom:2px;" +
+      "  }" +
+      "  .beliv-subtitle{" +
+      "    font-size:12px;" +
+      "    line-height:1.32;" +
+      "  }" +
+      "  .beliv-close{" +
+      "    width:32px;" +
+      "    height:32px;" +
+      "    border-radius:10px;" +
+      "    font-size:20px;" +
+      "  }" +
+      "  .beliv-messages{" +
+      "    padding:12px;" +
+      "  }" +
+      "  .beliv-chat-form{" +
+      "    gap:6px;" +
+      "    padding:9px 9px calc(9px + env(safe-area-inset-bottom));" +
+      "  }" +
+      "  .beliv-chat-input{" +
+      "    padding:11px 11px;" +
+      "  }" +
+      "  .beliv-chat-submit{" +
+      "    min-width:64px;" +
+      "    padding:0 11px;" +
+      "  }" +
       "}"
     );
   }
