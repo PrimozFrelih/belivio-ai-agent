@@ -1633,26 +1633,27 @@
       "    border-radius:16px;" +
       "  }" +
       "  .beliv-panel{" +
-      "    left:max(0px,env(safe-area-inset-left)) !important;" +
-      "    right:max(0px,env(safe-area-inset-right)) !important;" +
-      "    bottom:0;" +
+      "    left:max(6px,env(safe-area-inset-left)) !important;" +
+      "    right:max(6px,env(safe-area-inset-right)) !important;" +
+      "    top:max(6px,env(safe-area-inset-top));" +
+      "    bottom:max(6px,env(safe-area-inset-bottom));" +
       "    width:auto;" +
-      "    height:min(100dvh,100vh);" +
-      "    max-height:100dvh;" +
-      "    border-radius:20px 20px 0 0;" +
+      "    height:auto;" +
+      "    max-height:none;" +
+      "    border-radius:20px;" +
       "    transform:translateY(22px);" +
       "  }" +
       "  .beliv-modal.beliv-open .beliv-panel{" +
       "    transform:translateY(0);" +
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
-      "    left:max(0px,env(safe-area-inset-left)) !important;" +
-      "    right:max(0px,env(safe-area-inset-right)) !important;" +
-      "    top:auto;" +
-      "    bottom:0;" +
+      "    left:max(6px,env(safe-area-inset-left)) !important;" +
+      "    right:max(6px,env(safe-area-inset-right)) !important;" +
+      "    top:max(6px,env(safe-area-inset-top));" +
+      "    bottom:max(6px,env(safe-area-inset-bottom));" +
       "    width:auto;" +
-      "    height:min(100dvh,100vh);" +
-      "    border-radius:20px 20px 0 0;" +
+      "    height:auto;" +
+      "    border-radius:20px;" +
       "    transform:translateY(22px);" +
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-modal.beliv-open .beliv-panel{" +
