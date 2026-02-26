@@ -7,18 +7,18 @@
     <link
       rel="icon"
       type="image/svg+xml"
-      href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" rx="14" fill="%230f436f"/><rect x="14" y="18" width="36" height="28" rx="8" fill="none" stroke="%23ffffff" stroke-width="3"/><circle cx="25" cy="30" r="3" fill="%23ffffff"/><circle cx="39" cy="30" r="3" fill="%23ffffff"/><rect x="23" y="36" width="18" height="3.8" rx="1.9" fill="%23ffffff"/></svg>'
+      href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" rx="16" fill="%231877f2"/><path d="M17 20h30a7 7 0 0 1 7 7v8a7 7 0 0 1-7 7H30l-9 8 2-8h-6a7 7 0 0 1-7-7v-8a7 7 0 0 1 7-7Z" fill="%23fff"/><path d="M37.5 25 28 35h6l-2 7 9.5-10h-6Z" fill="%231b66f7"/></svg>'
     />
     <style>
       :root {
-        --bg-a: #f2faf6;
-        --bg-b: #f4f7fd;
-        --bg-c: #fffdf8;
+        --bg-a: #f4f7ff;
+        --bg-b: #f6f9ff;
+        --bg-c: #fbfcff;
         --card: #ffffffdd;
         --line: #cfe0ea;
         --text: #142638;
         --muted: #4e6478;
-        --accent: #0f766e;
+        --accent: #1877f2;
       }
 
       * {
@@ -30,8 +30,8 @@
         font-family: "Manrope", "Segoe UI", sans-serif;
         color: var(--text);
         background:
-          radial-gradient(1200px 500px at 5% -20%, #cce8dd 0%, transparent 60%),
-          radial-gradient(1000px 500px at 100% 0%, #dfe9f8 0%, transparent 60%),
+          radial-gradient(1200px 500px at 5% -20%, #d8e8ff 0%, transparent 60%),
+          radial-gradient(1000px 500px at 100% 0%, #e7efff 0%, transparent 60%),
           linear-gradient(170deg, var(--bg-a) 0%, var(--bg-b) 50%, var(--bg-c) 100%);
         min-height: 100vh;
       }
@@ -126,7 +126,7 @@
       .field input:focus,
       .field select:focus {
         border-color: var(--accent);
-        box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+        box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.14);
       }
 
       .preview-column {
@@ -155,7 +155,7 @@
         border: 1px dashed #aec5d5;
         border-radius: 14px;
         background:
-          linear-gradient(140deg, #f7fcfa 0%, #f6f9ff 52%, #fefdfa 100%);
+          linear-gradient(140deg, #f5f8ff 0%, #f7f9ff 52%, #f9fbff 100%);
         padding: 12px;
         position: relative;
         overflow: hidden;
@@ -196,7 +196,7 @@
         color: #ffffff;
         font-weight: 800;
         cursor: pointer;
-        background: linear-gradient(140deg, #0f766e, #0b5f59);
+        background: linear-gradient(140deg, #1877f2, #1663d8);
       }
 
       pre {

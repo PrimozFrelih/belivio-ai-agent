@@ -24,8 +24,8 @@
     launcherButtonLabel: "Ask",
     popupButtonLabel: "Send",
     welcomeMessage: "Hi! I can help you find information from this website.",
-    accentColor: "#0f766e",
-    accentColorDark: "#0b5f59",
+    accentColor: "#1877f2",
+    accentColorDark: "#1663d8",
     textColor: "#0f172a",
     position: "bottom-right",
     zIndex: 2147483000,
@@ -151,7 +151,7 @@
       '          <h2 class="beliv-title"></h2>' +
       '          <p class="beliv-subtitle"></p>' +
       "        </div>" +
-      '        <button class="beliv-close" type="button" aria-label="Close chat">x</button>' +
+      '        <button class="beliv-close" type="button" aria-label="Close chat">&times;</button>' +
       "      </header>" +
       '      <div class="beliv-messages" aria-live="polite"></div>' +
       '      <form class="beliv-chat-form" novalidate>' +
@@ -910,6 +910,8 @@
       ".beliv-shell{" +
       "  font-family:'Manrope','Segoe UI',sans-serif;" +
       "  color:var(--beliv-text);" +
+      "  -webkit-font-smoothing:antialiased;" +
+      "  text-rendering:optimizeLegibility;" +
       "}" +
       ".beliv-shell.beliv-theme-dark{" +
       "  color:#e5edf6;" +
@@ -919,23 +921,23 @@
       "  left:auto !important;" +
       "  right:auto !important;" +
       "  bottom:auto;" +
-      "  width:min(100%,1120px);" +
+      "  width:min(100%,1020px);" +
       "  margin:0 auto;" +
-      "  border-radius:26px;" +
-      "  border:3px solid #74c6ef;" +
-      "  box-shadow:0 10px 24px rgba(4,16,28,0.12);" +
+      "  border-radius:24px;" +
+      "  border:2px solid #8ec9ff;" +
+      "  box-shadow:0 16px 34px rgba(8,26,48,0.14);" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-modal{" +
       "  z-index:2147483647 !important;" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-overlay{" +
-      "  background:rgba(7,15,23,0.34);" +
-      "  backdrop-filter:blur(6px);" +
-      "  -webkit-backdrop-filter:blur(6px);" +
+      "  background:rgba(7,16,29,0.42);" +
+      "  backdrop-filter:blur(7px) saturate(120%);" +
+      "  -webkit-backdrop-filter:blur(7px) saturate(120%);" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-input{" +
-      "  padding:24px 108px 24px 30px;" +
-      "  font-size:26px;" +
+      "  padding:22px 104px 22px 30px;" +
+      "  font-size:24px;" +
       "  line-height:1.2;" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-submit{" +
@@ -943,12 +945,13 @@
       "  right:12px;" +
       "  top:50%;" +
       "  transform:translateY(-50%);" +
-      "  width:74px;" +
-      "  min-width:74px;" +
-      "  height:74px;" +
-      "  border-radius:24px;" +
+      "  width:68px;" +
+      "  min-width:68px;" +
+      "  height:68px;" +
+      "  border-radius:20px;" +
       "  padding:0;" +
-      "  background:linear-gradient(145deg,#0f436f,#0a2f56);" +
+      "  background:linear-gradient(145deg,var(--beliv-accent),var(--beliv-accent-dark));" +
+      "  box-shadow:0 10px 22px rgba(24,119,242,0.35);" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-label{" +
       "  display:none;" +
@@ -959,46 +962,52 @@
       ".beliv-float-trigger{" +
       "  display:none;" +
       "  border:0;" +
-      "  width:64px;" +
-      "  height:64px;" +
+      "  width:62px;" +
+      "  height:62px;" +
       "  border-radius:999px;" +
       "  cursor:pointer;" +
       "  align-items:center;" +
       "  justify-content:center;" +
-      "  background:linear-gradient(145deg,var(--beliv-accent),var(--beliv-accent-dark));" +
-      "  box-shadow:0 18px 34px rgba(5,14,24,0.22);" +
+      "  background:radial-gradient(circle at 30% 24%,#4da0ff 0,var(--beliv-accent) 55%,var(--beliv-accent-dark) 100%);" +
+      "  box-shadow:0 18px 38px rgba(17,80,178,0.34);" +
       "  z-index:var(--beliv-z-index);" +
-      "  transition:transform .2s ease,opacity .2s ease;" +
+      "  transition:transform .2s ease,opacity .2s ease,box-shadow .2s ease;" +
       "}" +
       ".beliv-float-trigger:hover{" +
       "  transform:translateY(-2px);" +
+      "  box-shadow:0 22px 42px rgba(17,80,178,0.38);" +
       "}" +
       ".beliv-float-face{" +
-      "  width:28px;" +
+      "  width:29px;" +
       "  height:24px;" +
-      "  border:2px solid rgba(255,255,255,0.96);" +
-      "  border-radius:8px;" +
       "  position:relative;" +
       "  display:block;" +
       "}" +
       ".beliv-float-face i{" +
       "  position:absolute;" +
-      "  top:6px;" +
-      "  width:5px;" +
-      "  height:5px;" +
-      "  border-radius:50%;" +
+      "  display:block;" +
       "  background:#ffffff;" +
       "}" +
-      ".beliv-float-face i:nth-child(1){left:6px;}" +
-      ".beliv-float-face i:nth-child(2){right:6px;}" +
+      ".beliv-float-face i:nth-child(1){" +
+      "  inset:0;" +
+      "  border-radius:12px;" +
+      "}" +
+      ".beliv-float-face i:nth-child(2){" +
+      "  left:4px;" +
+      "  bottom:-3px;" +
+      "  width:10px;" +
+      "  height:10px;" +
+      "  clip-path:polygon(0 0,100% 0,34% 100%);" +
+      "}" +
       ".beliv-float-face b{" +
       "  position:absolute;" +
-      "  left:6px;" +
-      "  right:6px;" +
-      "  bottom:5px;" +
-      "  height:3px;" +
-      "  border-radius:999px;" +
-      "  background:#ffffff;" +
+      "  top:50%;" +
+      "  left:50%;" +
+      "  width:11px;" +
+      "  height:13px;" +
+      "  transform:translate(-50%,-50%);" +
+      "  background:#1b66f7;" +
+      "  clip-path:polygon(58% 0,14% 56%,44% 56%,31% 100%,86% 38%,57% 38%);" +
       "}" +
       ".beliv-shell.beliv-mode-popupfloat .beliv-float-trigger{" +
       "  display:flex;" +
@@ -1021,9 +1030,9 @@
       "  width:min(540px,calc(100vw - 32px));" +
       "  display:flex;" +
       "  background:#ffffff;" +
-      "  border:1px solid #d7e2ea;" +
+      "  border:1px solid #d9e6f2;" +
       "  border-radius:999px;" +
-      "  box-shadow:0 22px 40px rgba(5,14,24,0.12);" +
+      "  box-shadow:0 20px 42px rgba(11,44,96,0.14);" +
       "  overflow:hidden;" +
       "  z-index:var(--beliv-z-index);" +
       "  transition:opacity .2s ease,transform .22s ease;" +
@@ -1059,30 +1068,35 @@
       "}" +
       ".beliv-launcher-agent{" +
       "  display:none;" +
-      "  width:26px;" +
+      "  width:28px;" +
       "  height:22px;" +
-      "  border:2px solid rgba(255,255,255,0.98);" +
-      "  border-radius:8px;" +
       "  position:relative;" +
       "}" +
       ".beliv-launcher-agent i{" +
       "  position:absolute;" +
-      "  top:6px;" +
-      "  width:4px;" +
-      "  height:4px;" +
-      "  border-radius:50%;" +
+      "  display:block;" +
       "  background:#ffffff;" +
       "}" +
-      ".beliv-launcher-agent i:nth-child(1){left:6px;}" +
-      ".beliv-launcher-agent i:nth-child(2){right:6px;}" +
+      ".beliv-launcher-agent i:nth-child(1){" +
+      "  inset:0;" +
+      "  border-radius:11px;" +
+      "}" +
+      ".beliv-launcher-agent i:nth-child(2){" +
+      "  left:3px;" +
+      "  bottom:-2px;" +
+      "  width:9px;" +
+      "  height:9px;" +
+      "  clip-path:polygon(0 0,100% 0,34% 100%);" +
+      "}" +
       ".beliv-launcher-agent b{" +
       "  position:absolute;" +
-      "  left:6px;" +
-      "  right:6px;" +
-      "  bottom:5px;" +
-      "  height:3px;" +
-      "  border-radius:999px;" +
-      "  background:#ffffff;" +
+      "  top:50%;" +
+      "  left:50%;" +
+      "  width:11px;" +
+      "  height:13px;" +
+      "  transform:translate(-50%,-50%);" +
+      "  background:#1b66f7;" +
+      "  clip-path:polygon(58% 0,14% 56%,44% 56%,31% 100%,86% 38%,57% 38%);" +
       "}" +
       ".beliv-launcher-submit:disabled,.beliv-chat-submit:disabled{" +
       "  cursor:not-allowed;" +
@@ -1101,18 +1115,20 @@
       "  position:absolute;" +
       "  inset:0;" +
       "  background:rgba(7,15,23,0.47);" +
+      "  backdrop-filter:blur(4px);" +
+      "  -webkit-backdrop-filter:blur(4px);" +
       "}" +
       ".beliv-panel{" +
       "  position:absolute;" +
-      "  bottom:84px;" +
+      "  bottom:86px;" +
       "  width:min(var(--beliv-popup-width),calc(100vw - 32px));" +
-      "  height:min(var(--beliv-popup-height),calc(100vh - 112px));" +
+      "  height:min(var(--beliv-popup-height),calc(100vh - 108px));" +
       "  background:#ffffff;" +
-      "  border-radius:22px;" +
+      "  border-radius:20px;" +
       "  overflow:hidden;" +
       "  display:flex;" +
       "  flex-direction:column;" +
-      "  box-shadow:0 28px 70px rgba(2,8,15,0.33);" +
+      "  box-shadow:0 30px 70px rgba(8,24,52,0.34);" +
       "  transform:translateY(14px) scale(.985);" +
       "  transition:transform .22s ease;" +
       "}" +
@@ -1125,7 +1141,7 @@
       "  right:auto !important;" +
       "  bottom:auto;" +
       "  width:min(960px,calc(100vw - 56px));" +
-      "  height:min(82vh,760px);" +
+      "  height:min(84vh,780px);" +
       "  border-radius:22px;" +
       "  transform:translate(-50%,-46%) scale(.985);" +
       "}" +
@@ -1133,9 +1149,9 @@
       "  transform:translate(-50%,-50%) scale(1);" +
       "}" +
       ".beliv-header{" +
-      "  background:linear-gradient(145deg,var(--beliv-accent-dark),var(--beliv-accent));" +
+      "  background:radial-gradient(circle at 20% 10%,#4fa2ff 0,var(--beliv-accent) 54%,var(--beliv-accent-dark) 100%);" +
       "  color:#fff;" +
-      "  padding:14px 16px;" +
+      "  padding:16px 16px 15px;" +
       "  display:flex;" +
       "  align-items:flex-start;" +
       "  justify-content:space-between;" +
@@ -1144,30 +1160,30 @@
       ".beliv-heading{min-width:0;}" +
       ".beliv-title{" +
       "  margin:0 0 4px 0;" +
-      "  font-size:16px;" +
+      "  font-size:18px;" +
       "  line-height:1.2;" +
       "}" +
       ".beliv-subtitle{" +
       "  margin:0;" +
-      "  font-size:12px;" +
+      "  font-size:13px;" +
       "  opacity:.94;" +
       "}" +
       ".beliv-close{" +
       "  border:0;" +
-      "  background:rgba(255,255,255,0.16);" +
+      "  background:rgba(255,255,255,0.22);" +
       "  color:#fff;" +
-      "  width:30px;" +
-      "  height:30px;" +
-      "  border-radius:8px;" +
+      "  width:34px;" +
+      "  height:34px;" +
+      "  border-radius:12px;" +
       "  cursor:pointer;" +
-      "  font-size:17px;" +
+      "  font-size:22px;" +
       "  line-height:1;" +
       "}" +
       ".beliv-messages{" +
       "  flex:1;" +
       "  overflow:auto;" +
-      "  padding:14px;" +
-      "  background:radial-gradient(circle at 100% 0,#f4fbf8 0,#f8fafc 48%,#f9fbff 100%);" +
+      "  padding:16px;" +
+      "  background:radial-gradient(circle at 100% 0,#edf4ff 0,#f5f8ff 52%,#f7faff 100%);" +
       "}" +
       ".beliv-row{" +
       "  display:flex;" +
@@ -1176,37 +1192,39 @@
       ".beliv-row-user{justify-content:flex-end;}" +
       ".beliv-row-assistant{justify-content:flex-start;}" +
       ".beliv-bubble{" +
-      "  max-width:86%;" +
-      "  border-radius:14px;" +
-      "  padding:11px 12px;" +
+      "  max-width:84%;" +
+      "  border-radius:18px;" +
+      "  padding:11px 13px;" +
       "  font-size:14px;" +
-      "  line-height:1.45;" +
+      "  line-height:1.5;" +
       "  white-space:pre-wrap;" +
       "  word-break:break-word;" +
       "}" +
       ".beliv-row-user .beliv-bubble{" +
       "  background:linear-gradient(145deg,var(--beliv-accent),var(--beliv-accent-dark));" +
       "  color:#fff;" +
+      "  border-bottom-right-radius:8px;" +
       "}" +
       ".beliv-row-assistant .beliv-bubble{" +
       "  background:#ffffff;" +
-      "  color:#182433;" +
-      "  border:1px solid #d9e2ec;" +
+      "  color:#1a2a3d;" +
+      "  border:1px solid #d7e2f0;" +
+      "  border-bottom-left-radius:8px;" +
       "}" +
       ".beliv-chat-form{" +
       "  display:flex;" +
       "  gap:8px;" +
       "  padding:12px;" +
-      "  border-top:1px solid #deebf1;" +
+      "  border-top:1px solid #dee8f5;" +
       "  background:#ffffff;" +
       "}" +
       ".beliv-chat-input{" +
       "  flex:1;" +
       "  min-width:0;" +
-      "  border:1px solid #cedce7;" +
+      "  border:1px solid #d2deeb;" +
       "  outline:none;" +
-      "  border-radius:10px;" +
-      "  padding:11px 12px;" +
+      "  border-radius:14px;" +
+      "  padding:11px 13px;" +
       "  color:var(--beliv-text);" +
       "  font-size:14px;" +
       "}" +
@@ -1215,8 +1233,9 @@
       "}" +
       ".beliv-chat-submit{" +
       "  border:0;" +
-      "  border-radius:10px;" +
-      "  padding:0 14px;" +
+      "  border-radius:14px;" +
+      "  padding:0 16px;" +
+      "  min-width:72px;" +
       "  color:#fff;" +
       "  font-weight:700;" +
       "  background:linear-gradient(145deg,var(--beliv-accent),var(--beliv-accent-dark));" +
@@ -1252,10 +1271,11 @@
       "  box-shadow:0 22px 40px rgba(0,0,0,0.45);" +
       "}" +
       ".beliv-shell.beliv-theme-dark.beliv-mode-fullcenter .beliv-launcher{" +
-      "  border-color:#2f7da8;" +
+      "  border-color:#3b8fd4;" +
       "}" +
       ".beliv-shell.beliv-theme-dark.beliv-mode-fullcenter .beliv-launcher-submit{" +
-      "  background:linear-gradient(145deg,#1d4f7e,#123a61);" +
+      "  background:linear-gradient(145deg,#2b81ff,#1d5ec7);" +
+      "  box-shadow:0 10px 24px rgba(18,84,183,0.44);" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-launcher-input{" +
       "  color:#e5edf6;" +
@@ -1270,7 +1290,7 @@
       "  background:#0f1723;" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-messages{" +
-      "  background:radial-gradient(circle at 100% 0,#13273b 0,#101c2d 48%,#0b1624 100%);" +
+      "  background:radial-gradient(circle at 100% 0,#1a2f46 0,#101d2f 52%,#0b1624 100%);" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-row-assistant .beliv-bubble{" +
       "  background:#162334;" +
@@ -1298,47 +1318,123 @@
       "  0%,80%,100%{transform:scale(.65);opacity:.44;}" +
       "  40%{transform:scale(1);opacity:1;}" +
       "}" +
-      "@media (max-width:680px){" +
+      "@media (max-width:900px){" +
       "  .beliv-launcher{" +
-      "    left:12px !important;" +
-      "    right:12px !important;" +
-      "    width:auto;" +
-      "    bottom:12px;" +
+      "    width:min(560px,calc(100vw - 20px));" +
+      "    bottom:14px;" +
       "  }" +
+      "  .beliv-shell.beliv-right .beliv-launcher{right:10px;}" +
+      "  .beliv-shell.beliv-left .beliv-launcher{left:10px;}" +
       "  .beliv-panel{" +
-      "    left:12px !important;" +
-      "    right:12px !important;" +
+      "    width:min(var(--beliv-popup-width),calc(100vw - 20px));" +
+      "    height:min(var(--beliv-popup-height),calc(100vh - 90px));" +
       "    bottom:74px;" +
-      "    width:auto;" +
-      "    height:min(78vh,calc(100vh - 86px));" +
-      "    border-radius:16px;" +
       "  }" +
+      "  .beliv-shell.beliv-right .beliv-panel{right:10px;}" +
+      "  .beliv-shell.beliv-left .beliv-panel{left:10px;}" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
-      "    left:50% !important;" +
-      "    right:auto !important;" +
-      "    top:50%;" +
-      "    bottom:auto;" +
-      "    width:calc(100vw - 20px);" +
-      "    height:min(86vh,calc(100vh - 20px));" +
+      "    width:calc(100vw - 26px);" +
+      "    height:min(88vh,calc(100vh - 24px));" +
+      "  }" +
+      "}" +
+      "@media (max-width:640px){" +
+      "  .beliv-launcher{" +
+      "    left:10px !important;" +
+      "    right:10px !important;" +
+      "    width:auto;" +
+      "    bottom:10px;" +
+      "    border-radius:18px;" +
+      "  }" +
+      "  .beliv-launcher-input{" +
+      "    font-size:16px;" +
+      "    padding:15px 16px;" +
+      "  }" +
+      "  .beliv-launcher-submit{" +
+      "    min-width:90px;" +
+      "    padding:0 16px;" +
       "    border-radius:14px;" +
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher{" +
-      "    border-radius:20px;" +
-      "  }" +
-      "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-input{" +
-      "    font-size:20px;" +
-      "    padding:18px 88px 18px 18px;" +
-      "  }" +
-      "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-submit{" +
-      "    width:60px;" +
-      "    min-width:60px;" +
-      "    height:60px;" +
-      "    right:10px;" +
       "    border-radius:18px;" +
       "  }" +
-      "  .beliv-shell.beliv-mode-popupfloat .beliv-float-trigger{" +
-      "    bottom:12px;" +
+      "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-input{" +
+      "    font-size:18px;" +
+      "    padding:16px 74px 16px 16px;" +
       "  }" +
+      "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-submit{" +
+      "    width:54px;" +
+      "    min-width:54px;" +
+      "    height:54px;" +
+      "    right:8px;" +
+      "    border-radius:16px;" +
+      "  }" +
+      "  .beliv-panel{" +
+      "    left:0 !important;" +
+      "    right:0 !important;" +
+      "    bottom:0;" +
+      "    width:100vw;" +
+      "    height:min(100dvh,100vh);" +
+      "    max-height:100dvh;" +
+      "    border-radius:20px 20px 0 0;" +
+      "    transform:translateY(22px);" +
+      "  }" +
+      "  .beliv-modal.beliv-open .beliv-panel{" +
+      "    transform:translateY(0);" +
+      "  }" +
+      "  .beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
+      "    left:0 !important;" +
+      "    right:0 !important;" +
+      "    top:auto;" +
+      "    bottom:0;" +
+      "    width:100vw;" +
+      "    height:min(100dvh,100vh);" +
+      "    border-radius:20px 20px 0 0;" +
+      "    transform:translateY(22px);" +
+      "  }" +
+      "  .beliv-shell.beliv-mode-fullcenter .beliv-modal.beliv-open .beliv-panel{" +
+      "    transform:translateY(0);" +
+      "  }" +
+      "  .beliv-header{" +
+      "    padding:15px 14px 14px;" +
+      "  }" +
+      "  .beliv-title{" +
+      "    font-size:19px;" +
+      "  }" +
+      "  .beliv-subtitle{" +
+      "    font-size:13px;" +
+      "  }" +
+      "  .beliv-close{" +
+      "    width:36px;" +
+      "    height:36px;" +
+      "  }" +
+      "  .beliv-messages{" +
+      "    padding:14px;" +
+      "  }" +
+      "  .beliv-bubble{" +
+      "    max-width:90%;" +
+      "    font-size:15px;" +
+      "  }" +
+      "  .beliv-chat-form{" +
+      "    padding:10px 10px calc(10px + env(safe-area-inset-bottom));" +
+      "  }" +
+      "  .beliv-chat-input{" +
+      "    font-size:16px;" +
+      "    padding:12px 13px;" +
+      "  }" +
+      "  .beliv-chat-submit{" +
+      "    min-width:68px;" +
+      "    padding:0 13px;" +
+      "  }" +
+      "  .beliv-brand{" +
+      "    padding:8px 12px calc(8px + env(safe-area-inset-bottom));" +
+      "  }" +
+      "  .beliv-shell.beliv-mode-popupfloat .beliv-float-trigger{" +
+      "    width:58px;" +
+      "    height:58px;" +
+      "    bottom:10px;" +
+      "  }" +
+      "  .beliv-shell.beliv-mode-popupfloat.beliv-right .beliv-float-trigger{right:10px;}" +
+      "  .beliv-shell.beliv-mode-popupfloat.beliv-left .beliv-float-trigger{left:10px;}" +
       "}"
     );
   }
