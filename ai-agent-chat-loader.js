@@ -310,6 +310,7 @@
 
     refs.messages.appendChild(row);
     refs.messages.scrollTop = refs.messages.scrollHeight;
+    refs.messages.scrollLeft = 0;
     return row;
   }
 
@@ -1386,33 +1387,40 @@
       ".beliv-messages{" +
       "  flex:1;" +
       "  overflow:auto;" +
+      "  overflow-x:hidden;" +
       "  padding:16px;" +
       "  background:radial-gradient(circle at 100% 0,#eaf3ff 0,#f5f8ff 50%,#f7faff 100%);" +
       "}" +
       ".beliv-row{" +
       "  display:flex;" +
+      "  width:100%;" +
+      "  min-width:0;" +
       "  margin-bottom:10px;" +
       "}" +
       ".beliv-row-user{justify-content:flex-end;}" +
       ".beliv-row-assistant{justify-content:flex-start;}" +
       ".beliv-bubble{" +
       "  max-width:84%;" +
+      "  min-width:0;" +
       "  border-radius:18px;" +
       "  padding:11px 13px;" +
       "  font-size:14px;" +
       "  line-height:1.5;" +
       "  white-space:pre-wrap;" +
       "  word-break:break-word;" +
+      "  overflow-wrap:anywhere;" +
       "}" +
       ".beliv-row-user .beliv-bubble{" +
       "  background:linear-gradient(145deg,var(--beliv-accent),var(--beliv-accent-dark));" +
       "  color:#fff;" +
+      "  margin-left:auto;" +
       "  border-bottom-right-radius:8px;" +
       "}" +
       ".beliv-row-assistant .beliv-bubble{" +
       "  background:#ffffff;" +
       "  color:#1a2a3d;" +
       "  border:1px solid #d7e2f0;" +
+      "  margin-right:auto;" +
       "  border-bottom-left-radius:8px;" +
       "}" +
       ".beliv-chat-form{" +
@@ -1555,29 +1563,50 @@
       "}" +
       "@media (max-width:900px){" +
       "  .beliv-launcher{" +
-      "    width:min(560px,calc(100vw - 20px));" +
-      "    bottom:14px;" +
+      "    width:min(560px,calc(100vw - 16px));" +
+      "    bottom:12px;" +
       "  }" +
-      "  .beliv-shell.beliv-right .beliv-launcher{right:10px;}" +
-      "  .beliv-shell.beliv-left .beliv-launcher{left:10px;}" +
+      "  .beliv-shell.beliv-right .beliv-launcher{right:8px;}" +
+      "  .beliv-shell.beliv-left .beliv-launcher{left:8px;}" +
       "  .beliv-panel{" +
-      "    width:min(var(--beliv-popup-width),calc(100vw - 20px));" +
-      "    height:min(var(--beliv-popup-height),calc(100vh - 90px));" +
-      "    bottom:74px;" +
+      "    width:min(var(--beliv-popup-width),calc(100vw - 16px));" +
+      "    height:min(var(--beliv-popup-height),calc(100vh - 82px));" +
+      "    bottom:70px;" +
       "  }" +
-      "  .beliv-shell.beliv-right .beliv-panel{right:10px;}" +
-      "  .beliv-shell.beliv-left .beliv-panel{left:10px;}" +
+      "  .beliv-shell.beliv-right .beliv-panel{right:8px;}" +
+      "  .beliv-shell.beliv-left .beliv-panel{left:8px;}" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
-      "    width:calc(100vw - 26px);" +
-      "    height:min(88vh,calc(100vh - 24px));" +
+      "    width:calc(100vw - 18px);" +
+      "    height:min(90vh,calc(100vh - 16px));" +
+      "  }" +
+      "}" +
+      "@media (max-width:820px){" +
+      "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-input{" +
+      "    font-size:20px;" +
+      "    padding:18px 86px 18px 18px;" +
+      "  }" +
+      "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-submit{" +
+      "    width:58px;" +
+      "    min-width:58px;" +
+      "    height:58px;" +
+      "    border-radius:16px;" +
+      "    right:9px;" +
+      "  }" +
+      "  .beliv-panel{" +
+      "    border-radius:18px;" +
+      "  }" +
+      "  .beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
+      "    width:calc(100vw - 12px);" +
+      "    height:min(92vh,calc(100vh - 12px));" +
+      "    border-radius:18px;" +
       "  }" +
       "}" +
       "@media (max-width:640px){" +
       "  .beliv-launcher{" +
-      "    left:10px !important;" +
-      "    right:10px !important;" +
+      "    left:max(8px,env(safe-area-inset-left)) !important;" +
+      "    right:max(8px,env(safe-area-inset-right)) !important;" +
       "    width:auto;" +
-      "    bottom:10px;" +
+      "    bottom:max(10px,env(safe-area-inset-bottom));" +
       "    border-radius:18px;" +
       "  }" +
       "  .beliv-launcher-input{" +
@@ -1604,10 +1633,10 @@
       "    border-radius:16px;" +
       "  }" +
       "  .beliv-panel{" +
-      "    left:0 !important;" +
-      "    right:0 !important;" +
+      "    left:max(0px,env(safe-area-inset-left)) !important;" +
+      "    right:max(0px,env(safe-area-inset-right)) !important;" +
       "    bottom:0;" +
-      "    width:100vw;" +
+      "    width:auto;" +
       "    height:min(100dvh,100vh);" +
       "    max-height:100dvh;" +
       "    border-radius:20px 20px 0 0;" +
@@ -1617,11 +1646,11 @@
       "    transform:translateY(0);" +
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
-      "    left:0 !important;" +
-      "    right:0 !important;" +
+      "    left:max(0px,env(safe-area-inset-left)) !important;" +
+      "    right:max(0px,env(safe-area-inset-right)) !important;" +
       "    top:auto;" +
       "    bottom:0;" +
-      "    width:100vw;" +
+      "    width:auto;" +
       "    height:min(100dvh,100vh);" +
       "    border-radius:20px 20px 0 0;" +
       "    transform:translateY(22px);" +
@@ -1652,14 +1681,14 @@
       "    height:36px;" +
       "  }" +
       "  .beliv-messages{" +
-      "    padding:14px;" +
+      "    padding:12px;" +
       "  }" +
       "  .beliv-bubble{" +
-      "    max-width:90%;" +
+      "    max-width:92%;" +
       "    font-size:15px;" +
       "  }" +
       "  .beliv-chat-form{" +
-      "    padding:10px 10px calc(10px + env(safe-area-inset-bottom));" +
+      "    padding:10px max(10px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));" +
       "  }" +
       "  .beliv-chat-input{" +
       "    font-size:16px;" +
@@ -1670,7 +1699,7 @@
       "    padding:0 13px;" +
       "  }" +
       "  .beliv-brand{" +
-      "    padding:8px 12px calc(8px + env(safe-area-inset-bottom));" +
+      "    padding:8px max(12px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));" +
       "  }" +
       "  .beliv-shell.beliv-mode-popupfloat .beliv-float-trigger{" +
       "    width:58px;" +
