@@ -23,6 +23,7 @@ Optional config before the script:
     mode: "popupfloat", // "compact", "fullcenter", or "popupfloat"
     hostSelector: "#widgetMount",
     hostPlacement: "append", // "append" or "prepend"
+    placeholder: "What service do you need?",
     currentUrl: "https://acme.com/pricing",
     subtitle: "Ask anything about this website.",
     position: "bottom-right",
@@ -54,6 +55,7 @@ The widget reads these at prompt submit time, so you can expose them as page inp
   window.BelivAIAgentConfig.mode = "popupfloat";
   window.BelivAIAgentConfig.hostSelector = "#widgetMount";
   window.BelivAIAgentConfig.hostPlacement = "prepend";
+  window.BelivAIAgentConfig.placeholder = "What service do you need?";
   window.BelivAIAgentConfig.currentUrl = "https://acme.com/docs/pricing";
 
   // Optional immediate UI/layout refresh
@@ -64,6 +66,7 @@ The widget reads these at prompt submit time, so you can expose them as page inp
     mode: window.BelivAIAgentConfig.mode,
     hostSelector: window.BelivAIAgentConfig.hostSelector,
     hostPlacement: window.BelivAIAgentConfig.hostPlacement,
+    placeholder: window.BelivAIAgentConfig.placeholder,
     currentUrl: window.BelivAIAgentConfig.currentUrl
   });
 </script>
@@ -114,8 +117,9 @@ git push origin v1.0.0
 - `mode` (`compact`, `fullcenter`, or `popupfloat`)
 - `hostSelector` (id, class, or tag selector)
 - `hostPlacement` (`append` or `prepend`)
+- `placeholder` (launcher input placeholder; preferred)
 - `currentUrl`
-- `launcherPlaceholder`
+- `launcherPlaceholder` (legacy alias of `placeholder`)
 - `popupPlaceholder`
 - `launcherButtonLabel`
 - `popupButtonLabel`

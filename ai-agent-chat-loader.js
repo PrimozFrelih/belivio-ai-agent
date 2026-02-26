@@ -18,6 +18,7 @@
     hostSelector: "",
     hostPlacement: "append",
     currentUrl: "",
+    placeholder: "Ask AI about this page...",
     launcherPlaceholder: "Ask AI about this page...",
     popupPlaceholder: "Type your follow-up...",
     launcherButtonLabel: "Ask",
@@ -44,6 +45,10 @@
   var detectedDomain = window.location.hostname || "";
   var normalizedCurrentUrl = normalizeUrl(runtimeConfig.currentUrl, detectedCurrentUrl);
   var detectedRuntimeDomain = domainFromUrl(normalizedCurrentUrl) || detectedDomain;
+  var resolvedLauncherPlaceholder = normalizeText(
+    runtimeConfig.placeholder,
+    normalizeText(runtimeConfig.launcherPlaceholder, DEFAULT_CONFIG.launcherPlaceholder)
+  );
   var config = {
     title: normalizeText(runtimeConfig.title, DEFAULT_CONFIG.title),
     subtitle: normalizeText(runtimeConfig.subtitle, DEFAULT_CONFIG.subtitle),
@@ -54,10 +59,8 @@
     hostSelector: normalizeSelector(runtimeConfig.hostSelector),
     hostPlacement: normalizeHostPlacement(runtimeConfig.hostPlacement, DEFAULT_CONFIG.hostPlacement),
     currentUrl: normalizedCurrentUrl,
-    launcherPlaceholder: normalizeText(
-      runtimeConfig.launcherPlaceholder,
-      DEFAULT_CONFIG.launcherPlaceholder
-    ),
+    placeholder: resolvedLauncherPlaceholder,
+    launcherPlaceholder: resolvedLauncherPlaceholder,
     popupPlaceholder: normalizeText(runtimeConfig.popupPlaceholder, DEFAULT_CONFIG.popupPlaceholder),
     launcherButtonLabel: normalizeText(
       runtimeConfig.launcherButtonLabel,
@@ -98,6 +101,7 @@
     launcherForm: null,
     launcherInput: null,
     launcherButton: null,
+    launcherLabel: null,
     floatButton: null,
     modal: null,
     closeButton: null,
@@ -131,7 +135,10 @@
       '<div class="beliv-shell">' +
       '  <form class="beliv-launcher" novalidate>' +
       '    <input class="beliv-launcher-input" type="text" autocomplete="off" />' +
-      '    <button class="beliv-launcher-submit" type="submit"></button>' +
+      '    <button class="beliv-launcher-submit" type="submit" aria-label="Submit">' +
+      '      <span class="beliv-launcher-label"></span>' +
+      '      <span class="beliv-launcher-agent" aria-hidden="true"><i></i><i></i><b></b></span>' +
+      "    </button>" +
       "  </form>" +
       '  <button class="beliv-float-trigger" type="button" aria-label="Open AI assistant">' +
       '    <span class="beliv-float-face"><i></i><i></i><b></b></span>' +
@@ -166,6 +173,7 @@
     refs.launcherForm = root.querySelector(".beliv-launcher");
     refs.launcherInput = root.querySelector(".beliv-launcher-input");
     refs.launcherButton = root.querySelector(".beliv-launcher-submit");
+    refs.launcherLabel = root.querySelector(".beliv-launcher-label");
     refs.floatButton = root.querySelector(".beliv-float-trigger");
     refs.modal = root.querySelector(".beliv-modal");
     refs.closeButton = root.querySelector(".beliv-close");
@@ -178,9 +186,10 @@
     refs.titleText.textContent = config.title;
     refs.subtitleText.textContent = config.subtitle;
     root.querySelector(".beliv-brand").textContent = config.brandLabel;
-    refs.launcherInput.placeholder = config.launcherPlaceholder;
+    refs.launcherInput.placeholder = config.placeholder;
     refs.chatInput.placeholder = config.popupPlaceholder;
-    refs.launcherButton.textContent = config.launcherButtonLabel;
+    refs.launcherLabel.textContent = config.launcherButtonLabel;
+    refs.launcherButton.setAttribute("aria-label", config.launcherButtonLabel);
     refs.chatButton.textContent = config.popupButtonLabel;
 
     bindEvents(root);
@@ -529,6 +538,16 @@
           if (Object.prototype.hasOwnProperty.call(nextContext, "hostPlacement")) {
             window.BelivAIAgentConfig.hostPlacement = nextContext.hostPlacement;
           }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "placeholder")) {
+            window.BelivAIAgentConfig.placeholder = nextContext.placeholder;
+            window.BelivAIAgentConfig.launcherPlaceholder = nextContext.placeholder;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "launcherPlaceholder")) {
+            window.BelivAIAgentConfig.launcherPlaceholder = nextContext.launcherPlaceholder;
+            if (!Object.prototype.hasOwnProperty.call(nextContext, "placeholder")) {
+              window.BelivAIAgentConfig.placeholder = nextContext.launcherPlaceholder;
+            }
+          }
           if (Object.prototype.hasOwnProperty.call(nextContext, "currentUrl")) {
             window.BelivAIAgentConfig.currentUrl = nextContext.currentUrl;
           }
@@ -579,6 +598,8 @@
       mode: liveConfig.mode,
       hostSelector: liveConfig.hostSelector,
       hostPlacement: liveConfig.hostPlacement,
+      placeholder: liveConfig.placeholder,
+      launcherPlaceholder: liveConfig.launcherPlaceholder,
       currentUrl: liveConfig.currentUrl
     };
   }
@@ -598,6 +619,10 @@
     var nextMode = normalizeMode(nextContext.mode, config.mode);
     var nextHostSelector = normalizeSelector(nextContext.hostSelector, config.hostSelector);
     var nextHostPlacement = normalizeHostPlacement(nextContext.hostPlacement, config.hostPlacement);
+    var nextLauncherPlaceholder = normalizeText(
+      nextContext.placeholder,
+      normalizeText(nextContext.launcherPlaceholder, config.placeholder)
+    );
     var nextCurrentUrl = normalizeUrl(nextContext.currentUrl, config.currentUrl || window.location.href);
     var nextDomainFallback =
       domainFromUrl(nextCurrentUrl) || config.domain || window.location.hostname || "";
@@ -611,6 +636,8 @@
     config.mode = nextMode;
     config.hostSelector = nextHostSelector;
     config.hostPlacement = nextHostPlacement;
+    config.placeholder = nextLauncherPlaceholder;
+    config.launcherPlaceholder = nextLauncherPlaceholder;
     config.currentUrl = nextCurrentUrl;
 
     if (autoSubtitle && !hasSubtitleOverride) {
@@ -627,6 +654,9 @@
     }
     if (refs.subtitleText) {
       refs.subtitleText.textContent = config.subtitle;
+    }
+    if (refs.launcherInput) {
+      refs.launcherInput.placeholder = config.placeholder;
     }
     syncPositionClass();
     syncThemeClass();
@@ -889,9 +919,11 @@
       "  left:auto !important;" +
       "  right:auto !important;" +
       "  bottom:auto;" +
-      "  width:min(100%,1020px);" +
+      "  width:min(100%,1120px);" +
       "  margin:0 auto;" +
-      "  border-radius:14px;" +
+      "  border-radius:26px;" +
+      "  border:3px solid #74c6ef;" +
+      "  box-shadow:0 10px 24px rgba(4,16,28,0.12);" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-modal{" +
       "  z-index:2147483647 !important;" +
@@ -902,11 +934,27 @@
       "  -webkit-backdrop-filter:blur(6px);" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-input{" +
-      "  padding:15px 18px;" +
-      "  font-size:16px;" +
+      "  padding:24px 108px 24px 30px;" +
+      "  font-size:26px;" +
+      "  line-height:1.2;" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-submit{" +
-      "  min-width:120px;" +
+      "  position:absolute;" +
+      "  right:12px;" +
+      "  top:50%;" +
+      "  transform:translateY(-50%);" +
+      "  width:74px;" +
+      "  min-width:74px;" +
+      "  height:74px;" +
+      "  border-radius:24px;" +
+      "  padding:0;" +
+      "  background:linear-gradient(145deg,#0f436f,#0a2f56);" +
+      "}" +
+      ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-label{" +
+      "  display:none;" +
+      "}" +
+      ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-agent{" +
+      "  display:block;" +
       "}" +
       ".beliv-float-trigger{" +
       "  display:none;" +
@@ -995,12 +1043,46 @@
       ".beliv-launcher-input::placeholder{color:#8b9aad;}" +
       ".beliv-launcher-submit{" +
       "  border:0;" +
+      "  position:relative;" +
+      "  display:inline-flex;" +
+      "  align-items:center;" +
+      "  justify-content:center;" +
       "  min-width:96px;" +
       "  padding:0 20px;" +
       "  font-weight:700;" +
       "  color:#fff;" +
       "  background:linear-gradient(145deg,var(--beliv-accent),var(--beliv-accent-dark));" +
       "  cursor:pointer;" +
+      "}" +
+      ".beliv-launcher-label{" +
+      "  display:inline;" +
+      "}" +
+      ".beliv-launcher-agent{" +
+      "  display:none;" +
+      "  width:26px;" +
+      "  height:22px;" +
+      "  border:2px solid rgba(255,255,255,0.98);" +
+      "  border-radius:8px;" +
+      "  position:relative;" +
+      "}" +
+      ".beliv-launcher-agent i{" +
+      "  position:absolute;" +
+      "  top:6px;" +
+      "  width:4px;" +
+      "  height:4px;" +
+      "  border-radius:50%;" +
+      "  background:#ffffff;" +
+      "}" +
+      ".beliv-launcher-agent i:nth-child(1){left:6px;}" +
+      ".beliv-launcher-agent i:nth-child(2){right:6px;}" +
+      ".beliv-launcher-agent b{" +
+      "  position:absolute;" +
+      "  left:6px;" +
+      "  right:6px;" +
+      "  bottom:5px;" +
+      "  height:3px;" +
+      "  border-radius:999px;" +
+      "  background:#ffffff;" +
       "}" +
       ".beliv-launcher-submit:disabled,.beliv-chat-submit:disabled{" +
       "  cursor:not-allowed;" +
@@ -1169,6 +1251,12 @@
       "  border-color:#2e3c4f;" +
       "  box-shadow:0 22px 40px rgba(0,0,0,0.45);" +
       "}" +
+      ".beliv-shell.beliv-theme-dark.beliv-mode-fullcenter .beliv-launcher{" +
+      "  border-color:#2f7da8;" +
+      "}" +
+      ".beliv-shell.beliv-theme-dark.beliv-mode-fullcenter .beliv-launcher-submit{" +
+      "  background:linear-gradient(145deg,#1d4f7e,#123a61);" +
+      "}" +
       ".beliv-shell.beliv-theme-dark .beliv-launcher-input{" +
       "  color:#e5edf6;" +
       "}" +
@@ -1233,6 +1321,20 @@
       "    width:calc(100vw - 20px);" +
       "    height:min(86vh,calc(100vh - 20px));" +
       "    border-radius:14px;" +
+      "  }" +
+      "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher{" +
+      "    border-radius:20px;" +
+      "  }" +
+      "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-input{" +
+      "    font-size:20px;" +
+      "    padding:18px 88px 18px 18px;" +
+      "  }" +
+      "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-submit{" +
+      "    width:60px;" +
+      "    min-width:60px;" +
+      "    height:60px;" +
+      "    right:10px;" +
+      "    border-radius:18px;" +
       "  }" +
       "  .beliv-shell.beliv-mode-popupfloat .beliv-float-trigger{" +
       "    bottom:12px;" +
