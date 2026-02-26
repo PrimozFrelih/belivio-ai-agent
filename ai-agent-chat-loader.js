@@ -24,6 +24,7 @@
     launcherButtonLabel: "Ask",
     popupButtonLabel: "Send",
     welcomeMessage: "Hi! I can help you find information from this website.",
+    disclaimer: "",
     accentColor: "#1877f2",
     accentColorDark: "#1663d8",
     textColor: "#0f172a",
@@ -68,6 +69,7 @@
     ),
     popupButtonLabel: normalizeText(runtimeConfig.popupButtonLabel, DEFAULT_CONFIG.popupButtonLabel),
     welcomeMessage: normalizeText(runtimeConfig.welcomeMessage, DEFAULT_CONFIG.welcomeMessage),
+    disclaimer: normalizeOptionalText(runtimeConfig.disclaimer, ""),
     accentColor: normalizeColor(runtimeConfig.accentColor, DEFAULT_CONFIG.accentColor),
     accentColorDark: normalizeColor(runtimeConfig.accentColorDark, DEFAULT_CONFIG.accentColorDark),
     textColor: normalizeColor(runtimeConfig.textColor, DEFAULT_CONFIG.textColor),
@@ -255,6 +257,7 @@
     refs.modal.classList.add("beliv-open");
     refs.modal.setAttribute("aria-hidden", "false");
     refs.shell.classList.add("beliv-open");
+    syncDisclaimerMessage();
 
     if (!state.hasWelcomed && config.welcomeMessage) {
       state.hasWelcomed = true;
@@ -326,6 +329,44 @@
     return row;
   }
 
+  function syncDisclaimerMessage() {
+    if (!refs.messages) {
+      return;
+    }
+
+    var staleRows = refs.messages.querySelectorAll(".beliv-row-disclaimer");
+    var i;
+    for (i = 0; i < staleRows.length; i += 1) {
+      if (staleRows[i].parentNode) {
+        staleRows[i].parentNode.removeChild(staleRows[i]);
+      }
+    }
+
+    if (!config.disclaimer) {
+      return;
+    }
+
+    var row = document.createElement("div");
+    row.className = "beliv-row beliv-row-disclaimer";
+
+    var bubble = document.createElement("div");
+    bubble.className = "beliv-bubble";
+
+    var icon = document.createElement("span");
+    icon.className = "beliv-disclaimer-icon";
+    icon.textContent = "!";
+
+    var text = document.createElement("span");
+    text.className = "beliv-disclaimer-text";
+    text.textContent = config.disclaimer;
+
+    bubble.appendChild(icon);
+    bubble.appendChild(text);
+    row.appendChild(bubble);
+
+    refs.messages.insertBefore(row, refs.messages.firstChild || null);
+  }
+
   async function sendPrompt(prompt) {
     if (state.isSending || typeof prompt !== "string") {
       return;
@@ -388,6 +429,7 @@
       launcherButtonLabel: config.launcherButtonLabel,
       popupButtonLabel: config.popupButtonLabel,
       welcomeMessage: config.welcomeMessage,
+      disclaimer: config.disclaimer,
       brandLabel: config.brandLabel,
       sessionId: state.sessionId,
       session_id: state.sessionId,
@@ -577,6 +619,9 @@
           if (Object.prototype.hasOwnProperty.call(nextContext, "welcomeMessage")) {
             window.BelivAIAgentConfig.welcomeMessage = nextContext.welcomeMessage;
           }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "disclaimer")) {
+            window.BelivAIAgentConfig.disclaimer = nextContext.disclaimer;
+          }
           if (Object.prototype.hasOwnProperty.call(nextContext, "brandLabel")) {
             window.BelivAIAgentConfig.brandLabel = nextContext.brandLabel;
           }
@@ -636,6 +681,7 @@
       launcherButtonLabel: liveConfig.launcherButtonLabel,
       popupButtonLabel: liveConfig.popupButtonLabel,
       welcomeMessage: liveConfig.welcomeMessage,
+      disclaimer: liveConfig.disclaimer,
       brandLabel: liveConfig.brandLabel,
       currentUrl: liveConfig.currentUrl
     };
@@ -668,6 +714,7 @@
     );
     var nextPopupButtonLabel = normalizeText(nextContext.popupButtonLabel, config.popupButtonLabel);
     var nextWelcomeMessage = normalizeText(nextContext.welcomeMessage, config.welcomeMessage);
+    var nextDisclaimer = normalizeOptionalText(nextContext.disclaimer, config.disclaimer);
     var nextBrandLabel = normalizeText(nextContext.brandLabel, config.brandLabel);
     var nextCurrentUrl = normalizeUrl(nextContext.currentUrl, config.currentUrl || window.location.href);
     var nextDomainFallback =
@@ -688,6 +735,7 @@
     config.launcherButtonLabel = nextLauncherButtonLabel;
     config.popupButtonLabel = nextPopupButtonLabel;
     config.brandLabel = nextBrandLabel;
+    config.disclaimer = nextDisclaimer;
     config.currentUrl = nextCurrentUrl;
 
     if (autoSubtitle && !hasSubtitleOverride) {
@@ -725,6 +773,7 @@
     if (refs.brandText) {
       refs.brandText.textContent = config.brandLabel;
     }
+    syncDisclaimerMessage();
     syncHostFavicon();
     syncPositionClass();
     syncThemeClass();
@@ -929,6 +978,13 @@
     }
     var normalized = value.trim();
     return normalized || fallback;
+  }
+
+  function normalizeOptionalText(value, fallback) {
+    if (typeof value !== "string") {
+      return fallback;
+    }
+    return value.trim();
   }
 
   function normalizeTheme(value, fallback) {
@@ -1423,6 +1479,39 @@
       "  margin-right:auto;" +
       "  border-bottom-left-radius:8px;" +
       "}" +
+      ".beliv-row-disclaimer{" +
+      "  justify-content:flex-start;" +
+      "  margin-bottom:12px;" +
+      "}" +
+      ".beliv-row-disclaimer .beliv-bubble{" +
+      "  width:100%;" +
+      "  max-width:100%;" +
+      "  display:flex;" +
+      "  align-items:flex-start;" +
+      "  gap:10px;" +
+      "  background:#fff5e8;" +
+      "  color:#665127;" +
+      "  border:1px solid #efd2a5;" +
+      "  border-radius:15px;" +
+      "  padding:11px 12px;" +
+      "}" +
+      ".beliv-disclaimer-icon{" +
+      "  width:22px;" +
+      "  height:22px;" +
+      "  flex:0 0 22px;" +
+      "  border-radius:7px;" +
+      "  background:#cfaa65;" +
+      "  color:#ffffff;" +
+      "  font-size:14px;" +
+      "  font-weight:800;" +
+      "  text-align:center;" +
+      "  line-height:22px;" +
+      "  margin-top:1px;" +
+      "}" +
+      ".beliv-disclaimer-text{" +
+      "  flex:1;" +
+      "  min-width:0;" +
+      "}" +
       ".beliv-chat-form{" +
       "  display:flex;" +
       "  gap:8px;" +
@@ -1520,6 +1609,15 @@
       "  background:#162334;" +
       "  color:#e5edf6;" +
       "  border-color:#2b3d52;" +
+      "}" +
+      ".beliv-shell.beliv-theme-dark .beliv-row-disclaimer .beliv-bubble{" +
+      "  background:#3b2f1a;" +
+      "  color:#f3dfba;" +
+      "  border-color:#8e7346;" +
+      "}" +
+      ".beliv-shell.beliv-theme-dark .beliv-disclaimer-icon{" +
+      "  background:#be9957;" +
+      "  color:#1d1200;" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-chat-form{" +
       "  background:#0f1723;" +

@@ -358,6 +358,14 @@
               <input id="cfgWelcomeMessage" type="text" value="Hi! I can help you find information from Beliv Demo Docs." />
             </div>
             <div class="field field-wide">
+              <label for="cfgDisclaimer">Disclaimer</label>
+              <input
+                id="cfgDisclaimer"
+                type="text"
+                value="This conversation is for convenience only and is not legal advice."
+              />
+            </div>
+            <div class="field field-wide">
               <label for="cfgBrandLabel">Brand Label</label>
               <input id="cfgBrandLabel" type="text" value="Powered by Beliv" />
             </div>
@@ -449,6 +457,7 @@
         launcherButtonLabel: "Ask",
         popupButtonLabel: "Send",
         welcomeMessage: "Hi! I can help you find information from Beliv Demo Docs.",
+        disclaimer: "This conversation is for convenience only and is not legal advice.",
         brandLabel: "Powered by Beliv",
         endpoint: "https://app.beliv.io/webhook/ai-chat-prompt",
         payload: {
@@ -478,6 +487,7 @@
             launcherButtonLabel: readValue("cfgLauncherBtnLabel"),
             popupButtonLabel: readValue("cfgPopupBtnLabel"),
             welcomeMessage: readValue("cfgWelcomeMessage"),
+            disclaimer: readValue("cfgDisclaimer"),
             brandLabel: readValue("cfgBrandLabel"),
             siteName: readValue("cfgSiteName"),
             domain: readValue("cfgDomain"),
@@ -507,6 +517,7 @@
             launcherButtonLabel: config.launcherButtonLabel,
             popupButtonLabel: config.popupButtonLabel,
             welcomeMessage: config.welcomeMessage,
+            disclaimer: config.disclaimer,
             brandLabel: config.brandLabel,
             endpoint: window.BelivAIAgentConfig.endpoint
           };
@@ -540,6 +551,7 @@
               launcherButtonLabel: config.launcherButtonLabel,
               popupButtonLabel: config.popupButtonLabel,
               welcomeMessage: config.welcomeMessage,
+              disclaimer: config.disclaimer,
               brandLabel: config.brandLabel,
               currentUrl: config.currentUrl
             });

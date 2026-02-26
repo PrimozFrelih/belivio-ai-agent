@@ -26,6 +26,7 @@ Optional config before the script:
     placeholder: "What service do you need?",
     currentUrl: "https://acme.com/pricing",
     subtitle: "Ask anything about this website.",
+    disclaimer: "This conversation is for convenience only and is not legal advice.",
     position: "bottom-right",
     endpoint: "https://app.beliv.io/webhook/ai-chat-prompt"
   };
@@ -49,6 +50,7 @@ The widget reads these at prompt submit time, so you can expose them as page inp
 - `launcherButtonLabel`
 - `popupButtonLabel`
 - `welcomeMessage`
+- `disclaimer`
 - `brandLabel`
 - `currentUrl`
 
@@ -70,6 +72,7 @@ The widget reads these at prompt submit time, so you can expose them as page inp
   window.BelivAIAgentConfig.launcherButtonLabel = "Ask";
   window.BelivAIAgentConfig.popupButtonLabel = "Send";
   window.BelivAIAgentConfig.welcomeMessage = "Hi! I can help you find information from Acme Help Center.";
+  window.BelivAIAgentConfig.disclaimer = "This conversation is for convenience only and is not legal advice.";
   window.BelivAIAgentConfig.brandLabel = "Powered by Beliv";
   window.BelivAIAgentConfig.currentUrl = "https://acme.com/docs/pricing";
 
@@ -88,6 +91,7 @@ The widget reads these at prompt submit time, so you can expose them as page inp
     launcherButtonLabel: window.BelivAIAgentConfig.launcherButtonLabel,
     popupButtonLabel: window.BelivAIAgentConfig.popupButtonLabel,
     welcomeMessage: window.BelivAIAgentConfig.welcomeMessage,
+    disclaimer: window.BelivAIAgentConfig.disclaimer,
     brandLabel: window.BelivAIAgentConfig.brandLabel,
     currentUrl: window.BelivAIAgentConfig.currentUrl
   });
@@ -146,6 +150,7 @@ git push origin v1.0.0
 - `launcherButtonLabel`
 - `popupButtonLabel`
 - `welcomeMessage`
+- `disclaimer` (shown at the top of the chat as a warning/info banner)
 - `position` (`bottom-right` or `bottom-left`)
 - `accentColor`
 - `accentColorDark`
@@ -163,7 +168,7 @@ Each message sends JSON with these fields (plus `payload` overrides):
 - `prompt`, `message`, `question`
 - `title`, `subtitle`, `siteName`, `domain`, `theme`, `mode`
 - `hostSelector`, `hostPlacement`, `placeholder`, `popupPlaceholder`
-- `launcherButtonLabel`, `popupButtonLabel`, `welcomeMessage`, `brandLabel`
+- `launcherButtonLabel`, `popupButtonLabel`, `welcomeMessage`, `disclaimer`, `brandLabel`
 - `sessionId`, `session_id`
 - `pageUrl`, `currentUrl`, `pageTitle`, `host`, `referrer`
 - `history` (chat history array with `role` and `content`)
