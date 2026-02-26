@@ -853,6 +853,12 @@
 
   function resolveFaviconCandidates(domain, currentUrl) {
     var candidates = [];
+    var pageFavicons = readDocumentFavicons();
+    var i;
+    for (i = 0; i < pageFavicons.length; i += 1) {
+      pushUnique(candidates, pageFavicons[i]);
+    }
+
     var hostFromUrl = domainFromUrl(currentUrl);
     var normalizedHost = normalizeDomain(
       domain,
@@ -861,7 +867,7 @@
 
     if (currentUrl) {
       try {
-        candidates.push(new URL("/favicon.ico", currentUrl).toString());
+        pushUnique(candidates, new URL("/favicon.ico", currentUrl).toString());
       } catch (error) {
         /* no-op */
       }
@@ -870,15 +876,50 @@
     if (normalizedHost) {
       var protocol = window.location.protocol === "http:" ? "http://" : "https://";
       var direct = protocol + normalizedHost + "/favicon.ico";
-      if (candidates.indexOf(direct) === -1) {
-        candidates.push(direct);
-      }
-      candidates.push(
+      pushUnique(candidates, direct);
+      pushUnique(
+        candidates,
         "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(normalizedHost) + "&sz=64"
       );
     }
 
     return candidates;
+  }
+
+  function readDocumentFavicons() {
+    var urls = [];
+    var links = document.querySelectorAll('link[rel]');
+    var i;
+
+    for (i = 0; i < links.length; i += 1) {
+      var node = links[i];
+      var rel = String(node.getAttribute("rel") || "").toLowerCase();
+      if (!rel || rel.indexOf("icon") === -1) {
+        continue;
+      }
+
+      var href = String(node.getAttribute("href") || "").trim();
+      if (!href) {
+        continue;
+      }
+
+      try {
+        pushUnique(urls, new URL(href, window.location.href).toString());
+      } catch (error) {
+        /* no-op */
+      }
+    }
+
+    return urls;
+  }
+
+  function pushUnique(list, value) {
+    if (!Array.isArray(list) || typeof value !== "string") {
+      return;
+    }
+    if (list.indexOf(value) === -1) {
+      list.push(value);
+    }
   }
 
   function normalizeText(value, fallback) {
