@@ -18,7 +18,11 @@ Optional config before the script:
   window.BelivAIAgentConfig = {
     title: "Website AI Helper",
     siteName: "Acme Help Center",
+    domain: "acme.com",
     theme: "light", // "light" or "dark"
+    mode: "compact", // "compact" or "fullcenter"
+    hostSelector: "#widgetMount",
+    hostPlacement: "append", // "append" or "prepend"
     currentUrl: "https://acme.com/pricing",
     subtitle: "Ask anything about this website.",
     position: "bottom-right",
@@ -30,18 +34,35 @@ Optional config before the script:
 
 ## Runtime context fields
 
-The widget reads `siteName`, `theme`, and `currentUrl` at prompt submit time, so you can expose those as regular page inputs.
+The widget reads these at prompt submit time, so you can expose them as page inputs:
+- `siteName`
+- `domain`
+- `theme`
+- `mode`
+- `hostSelector`
+- `hostPlacement`
+- `currentUrl`
+
+`mode="fullcenter"` renders the chat inside `hostSelector` and uses the available width of that container.
 
 ```html
 <script>
   window.BelivAIAgentConfig.siteName = "Acme Help Center";
+  window.BelivAIAgentConfig.domain = "docs.acme.com";
   window.BelivAIAgentConfig.theme = "dark";
+  window.BelivAIAgentConfig.mode = "fullcenter";
+  window.BelivAIAgentConfig.hostSelector = "#widgetMount";
+  window.BelivAIAgentConfig.hostPlacement = "prepend";
   window.BelivAIAgentConfig.currentUrl = "https://acme.com/docs/pricing";
 
-  // Optional immediate UI refresh (theme/subtitle)
+  // Optional immediate UI/layout refresh
   window.BelivAIAgent.updateContext({
     siteName: window.BelivAIAgentConfig.siteName,
+    domain: window.BelivAIAgentConfig.domain,
     theme: window.BelivAIAgentConfig.theme,
+    mode: window.BelivAIAgentConfig.mode,
+    hostSelector: window.BelivAIAgentConfig.hostSelector,
+    hostPlacement: window.BelivAIAgentConfig.hostPlacement,
     currentUrl: window.BelivAIAgentConfig.currentUrl
   });
 </script>
@@ -87,7 +108,11 @@ git push origin v1.0.0
 - `title`
 - `subtitle`
 - `siteName`
+- `domain`
 - `theme` (`light` or `dark`)
+- `mode` (`compact` or `fullcenter`)
+- `hostSelector` (id, class, or tag selector)
+- `hostPlacement` (`append` or `prepend`)
 - `currentUrl`
 - `launcherPlaceholder`
 - `popupPlaceholder`
@@ -109,7 +134,7 @@ git push origin v1.0.0
 
 Each message sends JSON with these fields (plus `payload` overrides):
 - `prompt`, `message`, `question`
-- `siteName`, `theme`
+- `siteName`, `domain`, `theme`, `mode`, `hostSelector`, `hostPlacement`
 - `sessionId`, `session_id`
 - `pageUrl`, `currentUrl`, `pageTitle`, `host`, `referrer`
 - `history` (chat history array with `role` and `content`)

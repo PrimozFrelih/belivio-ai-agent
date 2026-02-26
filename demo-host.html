@@ -74,6 +74,14 @@
         color: #4b6072;
         font-size: 13px;
       }
+      .mount-target {
+        margin-top: 14px;
+        min-height: 420px;
+        border: 1px dashed #bfd1dc;
+        border-radius: 12px;
+        background: linear-gradient(180deg, #f7fcfb 0%, #f9fbfe 100%);
+        padding: 12px;
+      }
       code {
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       }
@@ -108,17 +116,47 @@
             <input id="contextSiteName" type="text" value="Beliv Demo Docs" />
           </label>
           <label class="field">
+            <span>Domain</span>
+            <input id="contextDomain" type="text" value="demo.beliv.io" />
+          </label>
+          <label class="field">
             <span>Theme</span>
             <select id="contextTheme">
               <option value="light" selected>Light</option>
               <option value="dark">Dark</option>
             </select>
           </label>
+          <label class="field">
+            <span>Mode</span>
+            <select id="contextMode">
+              <option value="compact" selected>Compact</option>
+              <option value="fullcenter">Fullcenter</option>
+            </select>
+          </label>
           <label class="field field-wide">
             <span>Current URL</span>
             <input id="contextCurrentUrl" type="url" value="https://demo.beliv.io/docs/getting-started" />
           </label>
+          <label class="field field-wide">
+            <span>Host selector</span>
+            <input id="contextHostSelector" type="text" value="#widgetMount" />
+          </label>
+          <label class="field">
+            <span>Host placement</span>
+            <select id="contextHostPlacement">
+              <option value="append" selected>Append</option>
+              <option value="prepend">Top (prepend)</option>
+            </select>
+          </label>
         </form>
+      </section>
+
+      <section class="card">
+        <h2>Widget Mount Target</h2>
+        <p class="hint">
+          In <code>fullcenter</code> mode the chat renders inside this container and takes its width.
+        </p>
+        <div id="widgetMount" class="mount-target"></div>
       </section>
 
       <section class="card">
@@ -131,7 +169,11 @@
       window.BelivAIAgentConfig = {
         title: "Website AI Helper",
         siteName: "Beliv Demo Docs",
+        domain: "demo.beliv.io",
         theme: "light",
+        mode: "compact",
+        hostSelector: "#widgetMount",
+        hostPlacement: "append",
         currentUrl: "https://demo.beliv.io/docs/getting-started",
         subtitle: "Instant answers from your website knowledge base.",
         launcherPlaceholder: "Ask anything about this website...",
@@ -150,18 +192,30 @@
       (function () {
         var contextForm = document.getElementById("chatContextForm");
         var siteNameInput = document.getElementById("contextSiteName");
+        var domainInput = document.getElementById("contextDomain");
         var themeInput = document.getElementById("contextTheme");
+        var modeInput = document.getElementById("contextMode");
         var currentUrlInput = document.getElementById("contextCurrentUrl");
+        var hostSelectorInput = document.getElementById("contextHostSelector");
+        var hostPlacementInput = document.getElementById("contextHostPlacement");
 
         function syncContextToWidget() {
           var nextContext = {
             siteName: (siteNameInput.value || "").trim(),
+            domain: (domainInput.value || "").trim(),
             theme: themeInput.value || "light",
+            mode: modeInput.value || "compact",
+            hostSelector: (hostSelectorInput.value || "").trim(),
+            hostPlacement: hostPlacementInput.value || "append",
             currentUrl: (currentUrlInput.value || "").trim()
           };
 
           window.BelivAIAgentConfig.siteName = nextContext.siteName;
+          window.BelivAIAgentConfig.domain = nextContext.domain;
           window.BelivAIAgentConfig.theme = nextContext.theme;
+          window.BelivAIAgentConfig.mode = nextContext.mode;
+          window.BelivAIAgentConfig.hostSelector = nextContext.hostSelector;
+          window.BelivAIAgentConfig.hostPlacement = nextContext.hostPlacement;
           window.BelivAIAgentConfig.currentUrl = nextContext.currentUrl;
 
           if (window.BelivAIAgent && typeof window.BelivAIAgent.updateContext === "function") {

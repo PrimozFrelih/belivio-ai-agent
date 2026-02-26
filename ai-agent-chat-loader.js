@@ -12,7 +12,11 @@
     title: "Beliv AI Agent",
     subtitle: "Ask anything about this website.",
     siteName: "this website",
+    domain: "",
     theme: "light",
+    mode: "compact",
+    hostSelector: "",
+    hostPlacement: "append",
     currentUrl: "",
     launcherPlaceholder: "Ask AI about this page...",
     popupPlaceholder: "Type your follow-up...",
@@ -37,12 +41,19 @@
   var runtimeConfig = mergeOptions(DEFAULT_CONFIG, userConfig);
   var detectedSiteName = (document.title || window.location.host || DEFAULT_CONFIG.siteName).trim();
   var detectedCurrentUrl = window.location.href || "";
+  var detectedDomain = window.location.hostname || "";
+  var normalizedCurrentUrl = normalizeUrl(runtimeConfig.currentUrl, detectedCurrentUrl);
+  var detectedRuntimeDomain = domainFromUrl(normalizedCurrentUrl) || detectedDomain;
   var config = {
     title: normalizeText(runtimeConfig.title, DEFAULT_CONFIG.title),
     subtitle: normalizeText(runtimeConfig.subtitle, DEFAULT_CONFIG.subtitle),
     siteName: normalizeText(runtimeConfig.siteName, detectedSiteName),
+    domain: normalizeDomain(runtimeConfig.domain, detectedRuntimeDomain),
     theme: normalizeTheme(runtimeConfig.theme, DEFAULT_CONFIG.theme),
-    currentUrl: normalizeUrl(runtimeConfig.currentUrl, detectedCurrentUrl),
+    mode: normalizeMode(runtimeConfig.mode, DEFAULT_CONFIG.mode),
+    hostSelector: normalizeSelector(runtimeConfig.hostSelector),
+    hostPlacement: normalizeHostPlacement(runtimeConfig.hostPlacement, DEFAULT_CONFIG.hostPlacement),
+    currentUrl: normalizedCurrentUrl,
     launcherPlaceholder: normalizeText(
       runtimeConfig.launcherPlaceholder,
       DEFAULT_CONFIG.launcherPlaceholder
@@ -81,6 +92,7 @@
   };
 
   var refs = {
+    hostRoot: null,
     shell: null,
     launcherForm: null,
     launcherInput: null,
@@ -104,7 +116,7 @@
 
     var host = document.createElement("div");
     host.id = "beliv-ai-agent-root";
-    document.body.appendChild(host);
+    refs.hostRoot = host;
 
     var shadow = host.attachShadow({ mode: "open" });
     var style = document.createElement("style");
@@ -139,10 +151,12 @@
       "  </div>" +
       "</div>";
     shadow.appendChild(root);
+    placeHostRoot();
 
     refs.shell = root.querySelector(".beliv-shell");
     refs.shell.classList.add(config.position === "bottom-left" ? "beliv-left" : "beliv-right");
-    refs.shell.classList.add(config.theme === "dark" ? "beliv-theme-dark" : "beliv-theme-light");
+    syncThemeClass();
+    syncModeClass();
     refs.launcherForm = root.querySelector(".beliv-launcher");
     refs.launcherInput = root.querySelector(".beliv-launcher-input");
     refs.launcherButton = root.querySelector(".beliv-launcher-submit");
@@ -164,6 +178,10 @@
 
     bindEvents(root);
     bindPublicApi();
+
+    if (config.mode === "fullcenter") {
+      openModal();
+    }
   }
 
   function bindEvents(root) {
@@ -190,10 +208,23 @@
       sendPrompt(prompt);
     });
 
-    refs.closeButton.addEventListener("click", closeModal);
-    root.querySelector(".beliv-overlay").addEventListener("click", closeModal);
+    refs.closeButton.addEventListener("click", function () {
+      if (config.mode === "fullcenter") {
+        return;
+      }
+      closeModal();
+    });
+    root.querySelector(".beliv-overlay").addEventListener("click", function () {
+      if (config.mode === "fullcenter") {
+        return;
+      }
+      closeModal();
+    });
 
     document.addEventListener("keydown", function (event) {
+      if (config.mode === "fullcenter") {
+        return;
+      }
       if (event.key === "Escape" && state.isOpen) {
         closeModal();
       }
@@ -219,6 +250,9 @@
 
   function closeModal() {
     if (!refs.modal || !refs.shell) {
+      return;
+    }
+    if (config.mode === "fullcenter") {
       return;
     }
     state.isOpen = false;
@@ -323,7 +357,11 @@
       message: prompt,
       question: prompt,
       siteName: config.siteName,
+      domain: config.domain,
       theme: config.theme,
+      mode: config.mode,
+      hostSelector: config.hostSelector,
+      hostPlacement: config.hostPlacement,
       sessionId: state.sessionId,
       session_id: state.sessionId,
       pageUrl: config.currentUrl,
@@ -466,8 +504,20 @@
           if (Object.prototype.hasOwnProperty.call(nextContext, "siteName")) {
             window.BelivAIAgentConfig.siteName = nextContext.siteName;
           }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "domain")) {
+            window.BelivAIAgentConfig.domain = nextContext.domain;
+          }
           if (Object.prototype.hasOwnProperty.call(nextContext, "theme")) {
             window.BelivAIAgentConfig.theme = nextContext.theme;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "mode")) {
+            window.BelivAIAgentConfig.mode = nextContext.mode;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "hostSelector")) {
+            window.BelivAIAgentConfig.hostSelector = nextContext.hostSelector;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "hostPlacement")) {
+            window.BelivAIAgentConfig.hostPlacement = nextContext.hostPlacement;
           }
           if (Object.prototype.hasOwnProperty.call(nextContext, "currentUrl")) {
             window.BelivAIAgentConfig.currentUrl = nextContext.currentUrl;
@@ -511,7 +561,11 @@
     var liveConfig = isPlainObject(window.BelivAIAgentConfig) ? window.BelivAIAgentConfig : {};
     return {
       siteName: liveConfig.siteName,
+      domain: liveConfig.domain,
       theme: liveConfig.theme,
+      mode: liveConfig.mode,
+      hostSelector: liveConfig.hostSelector,
+      hostPlacement: liveConfig.hostPlacement,
       currentUrl: liveConfig.currentUrl
     };
   }
@@ -521,12 +575,23 @@
       return;
     }
 
+    var previousMode = config.mode;
     var nextSiteName = normalizeText(nextContext.siteName, config.siteName);
     var nextTheme = normalizeTheme(nextContext.theme, config.theme);
+    var nextMode = normalizeMode(nextContext.mode, config.mode);
+    var nextHostSelector = normalizeSelector(nextContext.hostSelector, config.hostSelector);
+    var nextHostPlacement = normalizeHostPlacement(nextContext.hostPlacement, config.hostPlacement);
     var nextCurrentUrl = normalizeUrl(nextContext.currentUrl, config.currentUrl || window.location.href);
+    var nextDomainFallback =
+      domainFromUrl(nextCurrentUrl) || config.domain || window.location.hostname || "";
+    var nextDomain = normalizeDomain(nextContext.domain, nextDomainFallback);
 
     config.siteName = nextSiteName;
+    config.domain = nextDomain;
     config.theme = nextTheme;
+    config.mode = nextMode;
+    config.hostSelector = nextHostSelector;
+    config.hostPlacement = nextHostPlacement;
     config.currentUrl = nextCurrentUrl;
 
     if (autoSubtitle) {
@@ -539,9 +604,77 @@
     if (refs.subtitleText) {
       refs.subtitleText.textContent = config.subtitle;
     }
+    syncThemeClass();
+    syncModeClass();
+    placeHostRoot();
+    if (config.mode === "fullcenter") {
+      openModal();
+    } else if (previousMode === "fullcenter" && state.isOpen) {
+      closeModal();
+    }
+  }
+
+  function syncThemeClass() {
     if (refs.shell) {
       refs.shell.classList.remove("beliv-theme-light", "beliv-theme-dark");
       refs.shell.classList.add(config.theme === "dark" ? "beliv-theme-dark" : "beliv-theme-light");
+    }
+  }
+
+  function syncModeClass() {
+    if (refs.shell) {
+      refs.shell.classList.remove("beliv-mode-compact", "beliv-mode-fullcenter");
+      refs.shell.classList.add(config.mode === "fullcenter" ? "beliv-mode-fullcenter" : "beliv-mode-compact");
+    }
+  }
+
+  function placeHostRoot() {
+    if (!refs.hostRoot || !document.body) {
+      return;
+    }
+
+    var target = resolveHostTarget();
+    if (!target) {
+      target = document.body;
+    }
+    if (target === refs.hostRoot || refs.hostRoot.contains(target)) {
+      target = document.body;
+    }
+
+    var parent = refs.hostRoot.parentNode;
+    if (parent !== target) {
+      if (parent) {
+        parent.removeChild(refs.hostRoot);
+      }
+      if (config.hostPlacement === "prepend" && target.firstChild) {
+        target.insertBefore(refs.hostRoot, target.firstChild);
+      } else {
+        target.appendChild(refs.hostRoot);
+      }
+      return;
+    }
+
+    if (config.hostPlacement === "prepend") {
+      if (target.firstChild !== refs.hostRoot) {
+        target.insertBefore(refs.hostRoot, target.firstChild);
+      }
+      return;
+    }
+
+    if (target.lastChild !== refs.hostRoot) {
+      target.appendChild(refs.hostRoot);
+    }
+  }
+
+  function resolveHostTarget() {
+    var selector = normalizeSelector(config.hostSelector, "");
+    if (!selector) {
+      return document.body;
+    }
+    try {
+      return document.querySelector(selector) || document.body;
+    } catch (error) {
+      return document.body;
     }
   }
 
@@ -562,6 +695,63 @@
       return "light";
     }
     return fallback;
+  }
+
+  function normalizeMode(value, fallback) {
+    var normalized = String(value || "").trim().toLowerCase();
+    if (normalized === "fullcenter") {
+      return "fullcenter";
+    }
+    if (normalized === "compact") {
+      return "compact";
+    }
+    return fallback;
+  }
+
+  function normalizeSelector(value, fallback) {
+    if (typeof value !== "string") {
+      return typeof fallback === "string" ? fallback : "";
+    }
+    var normalized = value.trim();
+    if (!normalized) {
+      return typeof fallback === "string" ? fallback : "";
+    }
+    return normalized;
+  }
+
+  function normalizeHostPlacement(value, fallback) {
+    var normalized = String(value || "").trim().toLowerCase();
+    if (normalized === "top" || normalized === "prepend" || normalized === "start") {
+      return "prepend";
+    }
+    if (normalized === "append" || normalized === "bottom" || normalized === "end") {
+      return "append";
+    }
+    return fallback;
+  }
+
+  function domainFromUrl(value) {
+    if (typeof value !== "string" || !value.trim()) {
+      return "";
+    }
+    try {
+      return new URL(value, window.location.href).hostname.toLowerCase();
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function normalizeDomain(value, fallback) {
+    var normalized = String(value || "").trim().toLowerCase();
+    if (!normalized) {
+      return String(fallback || "").trim().toLowerCase();
+    }
+    normalized = normalized.replace(/^https?:\/\//, "");
+    var slashIndex = normalized.indexOf("/");
+    if (slashIndex > -1) {
+      normalized = normalized.slice(0, slashIndex);
+    }
+    return normalized;
   }
 
   function normalizeUrl(value, fallback) {
@@ -621,6 +811,8 @@
       "  --beliv-z-index:" + options.zIndex + ";" +
       "  --beliv-popup-width:" + options.popupWidth + ";" +
       "  --beliv-popup-height:" + options.popupHeight + ";" +
+      "  display:block;" +
+      "  width:100%;" +
       "}" +
       ".beliv-root,*{box-sizing:border-box;}" +
       ".beliv-shell{" +
@@ -629,6 +821,35 @@
       "}" +
       ".beliv-shell.beliv-theme-dark{" +
       "  color:#e5edf6;" +
+      "}" +
+      ".beliv-shell.beliv-mode-fullcenter .beliv-launcher{" +
+      "  display:none;" +
+      "}" +
+      ".beliv-shell.beliv-mode-fullcenter .beliv-modal{" +
+      "  position:relative;" +
+      "  inset:auto;" +
+      "  opacity:1;" +
+      "  pointer-events:auto;" +
+      "  z-index:auto;" +
+      "}" +
+      ".beliv-shell.beliv-mode-fullcenter .beliv-overlay{" +
+      "  display:none;" +
+      "}" +
+      ".beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
+      "  position:relative;" +
+      "  right:auto;" +
+      "  left:auto;" +
+      "  bottom:auto;" +
+      "  width:100%;" +
+      "  max-width:100%;" +
+      "  height:var(--beliv-popup-height);" +
+      "  max-height:none;" +
+      "  border-radius:16px;" +
+      "  box-shadow:0 18px 40px rgba(2,8,15,0.16);" +
+      "  transform:none;" +
+      "}" +
+      ".beliv-shell.beliv-mode-fullcenter .beliv-close{" +
+      "  display:none;" +
       "}" +
       ".beliv-launcher{" +
       "  position:fixed;" +
@@ -700,6 +921,13 @@
       ".beliv-modal.beliv-open .beliv-panel{transform:translateY(0) scale(1);}" +
       ".beliv-shell.beliv-right .beliv-panel{right:20px;}" +
       ".beliv-shell.beliv-left .beliv-panel{left:20px;}" +
+      ".beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
+      "  right:auto !important;" +
+      "  left:auto !important;" +
+      "}" +
+      ".beliv-shell.beliv-mode-fullcenter .beliv-modal.beliv-open .beliv-panel{" +
+      "  transform:none;" +
+      "}" +
       ".beliv-header{" +
       "  background:linear-gradient(145deg,var(--beliv-accent-dark),var(--beliv-accent));" +
       "  color:#fff;" +
@@ -874,6 +1102,14 @@
       "    width:auto;" +
       "    height:min(78vh,calc(100vh - 86px));" +
       "    border-radius:16px;" +
+      "  }" +
+      "  .beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
+      "    left:auto !important;" +
+      "    right:auto !important;" +
+      "    bottom:auto;" +
+      "    width:100%;" +
+      "    height:min(var(--beliv-popup-height),78vh);" +
+      "    border-radius:14px;" +
       "  }" +
       "}"
     );
