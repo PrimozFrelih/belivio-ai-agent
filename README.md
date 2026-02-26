@@ -20,7 +20,7 @@ Optional config before the script:
     siteName: "Acme Help Center",
     domain: "acme.com",
     theme: "light", // "light" or "dark"
-    mode: "popupfloat", // "compact", "fullcenter", or "popupfloat"
+    mode: "fullcenter", // "compact", "fullcenter", or "popupfloat"
     hostSelector: "#widgetMount",
     hostPlacement: "append", // "append" or "prepend"
     placeholder: "What service do you need?",

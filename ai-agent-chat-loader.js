@@ -14,7 +14,7 @@
     siteName: "this website",
     domain: "",
     theme: "light",
-    mode: "compact",
+    mode: "fullcenter",
     hostSelector: "",
     hostPlacement: "append",
     currentUrl: "",
@@ -984,8 +984,10 @@
       "  width:min(100%,1020px);" +
       "  margin:0 auto;" +
       "  border-radius:24px;" +
-      "  border:2px solid #8ec9ff;" +
-      "  box-shadow:0 16px 34px rgba(8,26,48,0.14);" +
+      "  border:2px solid transparent;" +
+      "  background:linear-gradient(180deg,rgba(255,255,255,0.96),rgba(244,250,255,0.96)) padding-box,linear-gradient(126deg,rgba(80,166,255,0.95),rgba(83,112,255,0.92),rgba(72,238,227,0.9)) border-box;" +
+      "  box-shadow:0 20px 48px rgba(7,29,62,0.2),0 0 34px rgba(61,139,255,0.22);" +
+      "  animation:belivFramePulse 6.4s ease-in-out infinite;" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-modal{" +
       "  z-index:2147483647 !important;" +
@@ -999,6 +1001,11 @@
       "  padding:22px 104px 22px 30px;" +
       "  font-size:24px;" +
       "  line-height:1.2;" +
+      "  color:#0f2a46;" +
+      "  font-weight:500;" +
+      "}" +
+      ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-input::placeholder{" +
+      "  color:#2c5f8f;" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-submit{" +
       "  position:absolute;" +
@@ -1010,8 +1017,10 @@
       "  height:68px;" +
       "  border-radius:20px;" +
       "  padding:0;" +
-      "  background:linear-gradient(145deg,var(--beliv-accent),var(--beliv-accent-dark));" +
-      "  box-shadow:0 10px 22px rgba(24,119,242,0.35);" +
+      "  border:1px solid rgba(255,255,255,0.56);" +
+      "  background:radial-gradient(circle at 24% 22%,#5cb8ff 0,var(--beliv-accent) 52%,var(--beliv-accent-dark) 100%);" +
+      "  box-shadow:0 12px 26px rgba(24,119,242,0.38);" +
+      "  animation:belivCtaPulse 4.2s ease-in-out infinite;" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-label{" +
       "  display:none;" +
@@ -1183,12 +1192,13 @@
       "  bottom:86px;" +
       "  width:min(var(--beliv-popup-width),calc(100vw - 32px));" +
       "  height:min(var(--beliv-popup-height),calc(100vh - 108px));" +
-      "  background:#ffffff;" +
+      "  border:1px solid rgba(127,166,229,0.52);" +
+      "  background:radial-gradient(130% 100% at 0% 0%,rgba(107,183,255,0.24) 0,transparent 40%),radial-gradient(120% 90% at 100% 100%,rgba(61,233,221,0.2) 0,transparent 44%),linear-gradient(180deg,#f8fbff 0%,#f4f8ff 100%);" +
       "  border-radius:20px;" +
       "  overflow:hidden;" +
       "  display:flex;" +
       "  flex-direction:column;" +
-      "  box-shadow:0 30px 70px rgba(8,24,52,0.34);" +
+      "  box-shadow:0 30px 70px rgba(8,24,52,0.34),inset 18px 18px 46px -40px rgba(74,162,255,0.64),inset -20px -20px 42px -36px rgba(81,233,221,0.62);" +
       "  transform:translateY(14px) scale(.985);" +
       "  transition:transform .22s ease;" +
       "}" +
@@ -1209,13 +1219,16 @@
       "  transform:translate(-50%,-50%) scale(1);" +
       "}" +
       ".beliv-header{" +
-      "  background:radial-gradient(circle at 20% 10%,#4fa2ff 0,var(--beliv-accent) 54%,var(--beliv-accent-dark) 100%);" +
+      "  background:linear-gradient(122deg,#1e56ff,#1d7cff,#1bb8ff,#1e56ff);" +
+      "  background-size:220% 220%;" +
       "  color:#fff;" +
       "  padding:16px 16px 15px;" +
       "  display:flex;" +
       "  align-items:flex-start;" +
       "  justify-content:space-between;" +
       "  gap:14px;" +
+      "  box-shadow:inset 0 -1px 0 rgba(255,255,255,0.2);" +
+      "  animation:belivAurora 8.4s ease-in-out infinite;" +
       "}" +
       ".beliv-heading{min-width:0;}" +
       ".beliv-title{" +
@@ -1230,7 +1243,7 @@
       "}" +
       ".beliv-close{" +
       "  border:0;" +
-      "  background:rgba(255,255,255,0.22);" +
+      "  background:rgba(255,255,255,0.24);" +
       "  color:#fff;" +
       "  width:34px;" +
       "  height:34px;" +
@@ -1238,12 +1251,13 @@
       "  cursor:pointer;" +
       "  font-size:22px;" +
       "  line-height:1;" +
+      "  box-shadow:0 6px 16px rgba(8,18,48,0.22);" +
       "}" +
       ".beliv-messages{" +
       "  flex:1;" +
       "  overflow:auto;" +
       "  padding:16px;" +
-      "  background:radial-gradient(circle at 100% 0,#edf4ff 0,#f5f8ff 52%,#f7faff 100%);" +
+      "  background:radial-gradient(circle at 100% 0,#eaf3ff 0,#f5f8ff 50%,#f7faff 100%);" +
       "}" +
       ".beliv-row{" +
       "  display:flex;" +
@@ -1327,15 +1341,18 @@
       ".beliv-dots i:nth-child(3){animation-delay:.3s;}" +
       ".beliv-shell.beliv-theme-dark .beliv-launcher{" +
       "  background:#0f1723;" +
-      "  border-color:#2e3c4f;" +
-      "  box-shadow:0 22px 40px rgba(0,0,0,0.45);" +
+      "  border-color:#2f415a;" +
+      "  box-shadow:0 22px 40px rgba(0,0,0,0.45),0 0 24px rgba(35,112,214,0.2);" +
       "}" +
       ".beliv-shell.beliv-theme-dark.beliv-mode-fullcenter .beliv-launcher{" +
-      "  border-color:#3b8fd4;" +
+      "  border-color:transparent;" +
+      "  background:linear-gradient(180deg,rgba(8,18,34,0.94),rgba(9,24,42,0.94)) padding-box,linear-gradient(130deg,rgba(70,147,255,0.9),rgba(64,95,255,0.86),rgba(69,225,215,0.82)) border-box;" +
+      "  box-shadow:0 22px 48px rgba(0,0,0,0.55),0 0 34px rgba(58,135,255,0.3);" +
       "}" +
       ".beliv-shell.beliv-theme-dark.beliv-mode-fullcenter .beliv-launcher-submit{" +
-      "  background:linear-gradient(145deg,#2b81ff,#1d5ec7);" +
-      "  box-shadow:0 10px 24px rgba(18,84,183,0.44);" +
+      "  border-color:rgba(255,255,255,0.4);" +
+      "  background:radial-gradient(circle at 24% 22%,#59a9ff 0,#2b81ff 52%,#1d5ec7 100%);" +
+      "  box-shadow:0 12px 26px rgba(18,84,183,0.5);" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-launcher-input{" +
       "  color:#e5edf6;" +
@@ -1343,11 +1360,16 @@
       ".beliv-shell.beliv-theme-dark .beliv-launcher-input::placeholder{" +
       "  color:#91a4b7;" +
       "}" +
+      ".beliv-shell.beliv-theme-dark.beliv-mode-fullcenter .beliv-launcher-input::placeholder{" +
+      "  color:#9dc1e4;" +
+      "}" +
       ".beliv-shell.beliv-theme-dark .beliv-overlay{" +
       "  background:rgba(0,0,0,0.62);" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-panel{" +
-      "  background:#0f1723;" +
+      "  border-color:#2b4e7b;" +
+      "  background:radial-gradient(130% 100% at 0% 0%,rgba(57,138,232,0.24) 0,transparent 40%),radial-gradient(120% 90% at 100% 100%,rgba(54,192,188,0.18) 0,transparent 44%),linear-gradient(180deg,#0f1729 0,#0b1222 100%);" +
+      "  box-shadow:0 32px 72px rgba(0,0,0,0.58),inset 20px 20px 46px -40px rgba(50,120,218,0.54),inset -22px -20px 42px -36px rgba(43,176,170,0.45);" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-messages{" +
       "  background:radial-gradient(circle at 100% 0,#1a2f46 0,#101d2f 52%,#0b1624 100%);" +
@@ -1374,9 +1396,28 @@
       ".beliv-shell.beliv-theme-dark .beliv-dots i{" +
       "  background:#9eb3c6;" +
       "}" +
+      "@keyframes belivAurora{" +
+      "  0%{background-position:0% 50%;}" +
+      "  50%{background-position:100% 50%;}" +
+      "  100%{background-position:0% 50%;}" +
+      "}" +
+      "@keyframes belivFramePulse{" +
+      "  0%,100%{box-shadow:0 20px 48px rgba(7,29,62,0.2),0 0 28px rgba(61,139,255,0.2);}" +
+      "  50%{box-shadow:0 22px 54px rgba(7,29,62,0.24),0 0 40px rgba(61,139,255,0.32);}" +
+      "}" +
+      "@keyframes belivCtaPulse{" +
+      "  0%,100%{box-shadow:0 12px 26px rgba(24,119,242,0.34);}" +
+      "  50%{box-shadow:0 16px 30px rgba(24,119,242,0.48);}" +
+      "}" +
       "@keyframes belivPulse{" +
       "  0%,80%,100%{transform:scale(.65);opacity:.44;}" +
       "  40%{transform:scale(1);opacity:1;}" +
+      "}" +
+      "@media (prefers-reduced-motion:reduce){" +
+      "  .beliv-shell *{" +
+      "    animation:none !important;" +
+      "    transition:none !important;" +
+      "  }" +
       "}" +
       "@media (max-width:900px){" +
       "  .beliv-launcher{" +
