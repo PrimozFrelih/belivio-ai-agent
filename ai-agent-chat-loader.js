@@ -234,6 +234,7 @@
       return;
     }
     state.isOpen = true;
+    placeHostRoot();
     refs.modal.classList.add("beliv-open");
     refs.modal.setAttribute("aria-hidden", "false");
     refs.shell.classList.add("beliv-open");
@@ -254,6 +255,7 @@
     refs.modal.classList.remove("beliv-open");
     refs.modal.setAttribute("aria-hidden", "true");
     refs.shell.classList.remove("beliv-open");
+    placeHostRoot();
     if (config.mode === "popupfloat" && refs.floatButton) {
       refs.floatButton.focus();
       return;
@@ -669,7 +671,7 @@
       return;
     }
 
-    var target = config.mode === "fullcenter" ? resolveHostTarget() : document.body;
+    var target = resolveMountTarget();
     if (!target) {
       target = document.body;
     }
@@ -712,6 +714,16 @@
     } catch (error) {
       return document.body;
     }
+  }
+
+  function resolveMountTarget() {
+    if (config.mode !== "fullcenter") {
+      return document.body;
+    }
+    if (state.isOpen) {
+      return document.body;
+    }
+    return resolveHostTarget();
   }
 
   function normalizeText(value, fallback) {
@@ -882,7 +894,7 @@
       "  border-radius:14px;" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-modal{" +
-      "  z-index:calc(var(--beliv-z-index) + 2);" +
+      "  z-index:2147483647 !important;" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-overlay{" +
       "  background:rgba(7,15,23,0.34);" +
