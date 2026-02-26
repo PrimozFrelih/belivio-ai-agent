@@ -43,7 +43,7 @@ The widget reads these at prompt submit time, so you can expose them as page inp
 - `hostPlacement`
 - `currentUrl`
 
-`mode="fullcenter"` renders the chat inside `hostSelector` and uses the available width of that container.
+`mode="fullcenter"` renders a wide launcher inside `hostSelector`; on submit it opens a large centered popup chat with backdrop blur.
 `mode="popupfloat"` shows a floating agent icon button that opens the popup chat.
 
 ```html

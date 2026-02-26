@@ -185,10 +185,6 @@
 
     bindEvents(root);
     bindPublicApi();
-
-    if (config.mode === "fullcenter") {
-      openModal();
-    }
   }
 
   function bindEvents(root) {
@@ -220,22 +216,13 @@
     });
 
     refs.closeButton.addEventListener("click", function () {
-      if (config.mode === "fullcenter") {
-        return;
-      }
       closeModal();
     });
     root.querySelector(".beliv-overlay").addEventListener("click", function () {
-      if (config.mode === "fullcenter") {
-        return;
-      }
       closeModal();
     });
 
     document.addEventListener("keydown", function (event) {
-      if (config.mode === "fullcenter") {
-        return;
-      }
       if (event.key === "Escape" && state.isOpen) {
         closeModal();
       }
@@ -261,9 +248,6 @@
 
   function closeModal() {
     if (!refs.modal || !refs.shell) {
-      return;
-    }
-    if (config.mode === "fullcenter") {
       return;
     }
     state.isOpen = false;
@@ -646,9 +630,7 @@
     syncThemeClass();
     syncModeClass();
     placeHostRoot();
-    if (config.mode === "fullcenter") {
-      openModal();
-    } else if (previousMode === "fullcenter" && state.isOpen) {
+    if (config.mode !== "fullcenter" && previousMode === "fullcenter" && state.isOpen) {
       closeModal();
     }
   }
@@ -891,33 +873,28 @@
       "  color:#e5edf6;" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-launcher{" +
-      "  display:none;" +
+      "  position:relative;" +
+      "  left:auto !important;" +
+      "  right:auto !important;" +
+      "  bottom:auto;" +
+      "  width:min(100%,1020px);" +
+      "  margin:0 auto;" +
+      "  border-radius:14px;" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-modal{" +
-      "  position:relative;" +
-      "  inset:auto;" +
-      "  opacity:1;" +
-      "  pointer-events:auto;" +
-      "  z-index:auto;" +
+      "  z-index:calc(var(--beliv-z-index) + 2);" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-overlay{" +
-      "  display:none;" +
+      "  background:rgba(7,15,23,0.34);" +
+      "  backdrop-filter:blur(6px);" +
+      "  -webkit-backdrop-filter:blur(6px);" +
       "}" +
-      ".beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
-      "  position:relative;" +
-      "  right:auto;" +
-      "  left:auto;" +
-      "  bottom:auto;" +
-      "  width:100%;" +
-      "  max-width:100%;" +
-      "  height:var(--beliv-popup-height);" +
-      "  max-height:none;" +
-      "  border-radius:16px;" +
-      "  box-shadow:0 18px 40px rgba(2,8,15,0.16);" +
-      "  transform:none;" +
+      ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-input{" +
+      "  padding:15px 18px;" +
+      "  font-size:16px;" +
       "}" +
-      ".beliv-shell.beliv-mode-fullcenter .beliv-close{" +
-      "  display:none;" +
+      ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-submit{" +
+      "  min-width:120px;" +
       "}" +
       ".beliv-float-trigger{" +
       "  display:none;" +
@@ -1049,11 +1026,17 @@
       ".beliv-shell.beliv-right .beliv-panel{right:20px;}" +
       ".beliv-shell.beliv-left .beliv-panel{left:20px;}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
+      "  top:50%;" +
+      "  left:50% !important;" +
       "  right:auto !important;" +
-      "  left:auto !important;" +
+      "  bottom:auto;" +
+      "  width:min(960px,calc(100vw - 56px));" +
+      "  height:min(82vh,760px);" +
+      "  border-radius:22px;" +
+      "  transform:translate(-50%,-46%) scale(.985);" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-modal.beliv-open .beliv-panel{" +
-      "  transform:none;" +
+      "  transform:translate(-50%,-50%) scale(1);" +
       "}" +
       ".beliv-header{" +
       "  background:linear-gradient(145deg,var(--beliv-accent-dark),var(--beliv-accent));" +
@@ -1231,11 +1214,12 @@
       "    border-radius:16px;" +
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
-      "    left:auto !important;" +
+      "    left:50% !important;" +
       "    right:auto !important;" +
+      "    top:50%;" +
       "    bottom:auto;" +
-      "    width:100%;" +
-      "    height:min(var(--beliv-popup-height),78vh);" +
+      "    width:calc(100vw - 20px);" +
+      "    height:min(86vh,calc(100vh - 20px));" +
       "    border-radius:14px;" +
       "  }" +
       "  .beliv-shell.beliv-mode-popupfloat .beliv-float-trigger{" +
