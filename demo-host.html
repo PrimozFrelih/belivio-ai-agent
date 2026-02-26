@@ -266,6 +266,26 @@
               <label for="cfgPlaceholder">Launcher Placeholder</label>
               <input id="cfgPlaceholder" type="text" value="What service do you need?" />
             </div>
+            <div class="field field-wide">
+              <label for="cfgPopupPlaceholder">Popup Placeholder</label>
+              <input id="cfgPopupPlaceholder" type="text" value="Continue the conversation..." />
+            </div>
+            <div class="field">
+              <label for="cfgLauncherBtnLabel">Launcher Button Label</label>
+              <input id="cfgLauncherBtnLabel" type="text" value="Ask" />
+            </div>
+            <div class="field">
+              <label for="cfgPopupBtnLabel">Popup Button Label</label>
+              <input id="cfgPopupBtnLabel" type="text" value="Send" />
+            </div>
+            <div class="field field-wide">
+              <label for="cfgWelcomeMessage">Welcome Message</label>
+              <input id="cfgWelcomeMessage" type="text" value="Hi! I can help you find information from Beliv Demo Docs." />
+            </div>
+            <div class="field field-wide">
+              <label for="cfgBrandLabel">Brand Label</label>
+              <input id="cfgBrandLabel" type="text" value="Powered by Beliv" />
+            </div>
             <div class="field">
               <label for="cfgSiteName">Site Name</label>
               <input id="cfgSiteName" type="text" value="Beliv Demo Docs" />
@@ -353,6 +373,8 @@
         popupPlaceholder: "Continue the conversation...",
         launcherButtonLabel: "Ask",
         popupButtonLabel: "Send",
+        welcomeMessage: "Hi! I can help you find information from Beliv Demo Docs.",
+        brandLabel: "Powered by Beliv",
         endpoint: "https://app.beliv.io/webhook/ai-chat-prompt",
         payload: {
           source: "demo-host-showcase"
@@ -377,6 +399,11 @@
             title: readValue("cfgTitle"),
             subtitle: readValue("cfgSubtitle"),
             placeholder: readValue("cfgPlaceholder"),
+            popupPlaceholder: readValue("cfgPopupPlaceholder"),
+            launcherButtonLabel: readValue("cfgLauncherBtnLabel"),
+            popupButtonLabel: readValue("cfgPopupBtnLabel"),
+            welcomeMessage: readValue("cfgWelcomeMessage"),
+            brandLabel: readValue("cfgBrandLabel"),
             siteName: readValue("cfgSiteName"),
             domain: readValue("cfgDomain"),
             theme: readValue("cfgTheme") || "light",
@@ -401,9 +428,11 @@
             hostPlacement: config.hostPlacement,
             currentUrl: config.currentUrl,
             placeholder: config.placeholder,
-            popupPlaceholder: window.BelivAIAgentConfig.popupPlaceholder,
-            launcherButtonLabel: window.BelivAIAgentConfig.launcherButtonLabel,
-            popupButtonLabel: window.BelivAIAgentConfig.popupButtonLabel,
+            popupPlaceholder: config.popupPlaceholder,
+            launcherButtonLabel: config.launcherButtonLabel,
+            popupButtonLabel: config.popupButtonLabel,
+            welcomeMessage: config.welcomeMessage,
+            brandLabel: config.brandLabel,
             endpoint: window.BelivAIAgentConfig.endpoint
           };
 
@@ -432,6 +461,11 @@
               hostSelector: config.hostSelector,
               hostPlacement: config.hostPlacement,
               placeholder: config.placeholder,
+              popupPlaceholder: config.popupPlaceholder,
+              launcherButtonLabel: config.launcherButtonLabel,
+              popupButtonLabel: config.popupButtonLabel,
+              welcomeMessage: config.welcomeMessage,
+              brandLabel: config.brandLabel,
               currentUrl: config.currentUrl
             });
           }

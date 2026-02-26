@@ -36,12 +36,20 @@ Optional config before the script:
 ## Runtime context fields
 
 The widget reads these at prompt submit time, so you can expose them as page inputs:
+- `title`
+- `subtitle`
 - `siteName`
 - `domain`
 - `theme`
 - `mode`
 - `hostSelector`
 - `hostPlacement`
+- `placeholder`
+- `popupPlaceholder`
+- `launcherButtonLabel`
+- `popupButtonLabel`
+- `welcomeMessage`
+- `brandLabel`
 - `currentUrl`
 
 `mode="fullcenter"` renders a wide launcher inside `hostSelector`; on submit it opens a large centered popup chat with backdrop blur.
@@ -55,11 +63,20 @@ The widget reads these at prompt submit time, so you can expose them as page inp
   window.BelivAIAgentConfig.mode = "popupfloat";
   window.BelivAIAgentConfig.hostSelector = "#widgetMount";
   window.BelivAIAgentConfig.hostPlacement = "prepend";
+  window.BelivAIAgentConfig.title = "Website AI Helper";
+  window.BelivAIAgentConfig.subtitle = "Instant answers from your website knowledge base.";
   window.BelivAIAgentConfig.placeholder = "What service do you need?";
+  window.BelivAIAgentConfig.popupPlaceholder = "Continue the conversation...";
+  window.BelivAIAgentConfig.launcherButtonLabel = "Ask";
+  window.BelivAIAgentConfig.popupButtonLabel = "Send";
+  window.BelivAIAgentConfig.welcomeMessage = "Hi! I can help you find information from Acme Help Center.";
+  window.BelivAIAgentConfig.brandLabel = "Powered by Beliv";
   window.BelivAIAgentConfig.currentUrl = "https://acme.com/docs/pricing";
 
   // Optional immediate UI/layout refresh
   window.BelivAIAgent.updateContext({
+    title: window.BelivAIAgentConfig.title,
+    subtitle: window.BelivAIAgentConfig.subtitle,
     siteName: window.BelivAIAgentConfig.siteName,
     domain: window.BelivAIAgentConfig.domain,
     theme: window.BelivAIAgentConfig.theme,
@@ -67,6 +84,11 @@ The widget reads these at prompt submit time, so you can expose them as page inp
     hostSelector: window.BelivAIAgentConfig.hostSelector,
     hostPlacement: window.BelivAIAgentConfig.hostPlacement,
     placeholder: window.BelivAIAgentConfig.placeholder,
+    popupPlaceholder: window.BelivAIAgentConfig.popupPlaceholder,
+    launcherButtonLabel: window.BelivAIAgentConfig.launcherButtonLabel,
+    popupButtonLabel: window.BelivAIAgentConfig.popupButtonLabel,
+    welcomeMessage: window.BelivAIAgentConfig.welcomeMessage,
+    brandLabel: window.BelivAIAgentConfig.brandLabel,
     currentUrl: window.BelivAIAgentConfig.currentUrl
   });
 </script>
@@ -139,7 +161,9 @@ git push origin v1.0.0
 
 Each message sends JSON with these fields (plus `payload` overrides):
 - `prompt`, `message`, `question`
-- `siteName`, `domain`, `theme`, `mode`, `hostSelector`, `hostPlacement`
+- `title`, `subtitle`, `siteName`, `domain`, `theme`, `mode`
+- `hostSelector`, `hostPlacement`, `placeholder`, `popupPlaceholder`
+- `launcherButtonLabel`, `popupButtonLabel`, `welcomeMessage`, `brandLabel`
 - `sessionId`, `session_id`
 - `pageUrl`, `currentUrl`, `pageTitle`, `host`, `referrer`
 - `history` (chat history array with `role` and `content`)

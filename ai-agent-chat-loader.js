@@ -98,6 +98,7 @@
     hostRoot: null,
     shell: null,
     titleText: null,
+    brandText: null,
     launcherForm: null,
     launcherInput: null,
     launcherButton: null,
@@ -170,6 +171,7 @@
     syncThemeClass();
     syncModeClass();
     refs.titleText = root.querySelector(".beliv-title");
+    refs.brandText = root.querySelector(".beliv-brand");
     refs.launcherForm = root.querySelector(".beliv-launcher");
     refs.launcherInput = root.querySelector(".beliv-launcher-input");
     refs.launcherButton = root.querySelector(".beliv-launcher-submit");
@@ -185,7 +187,7 @@
 
     refs.titleText.textContent = config.title;
     refs.subtitleText.textContent = config.subtitle;
-    root.querySelector(".beliv-brand").textContent = config.brandLabel;
+    refs.brandText.textContent = config.brandLabel;
     refs.launcherInput.placeholder = config.placeholder;
     refs.chatInput.placeholder = config.popupPlaceholder;
     refs.launcherLabel.textContent = config.launcherButtonLabel;
@@ -366,12 +368,20 @@
       prompt: prompt,
       message: prompt,
       question: prompt,
+      title: config.title,
+      subtitle: config.subtitle,
       siteName: config.siteName,
       domain: config.domain,
       theme: config.theme,
       mode: config.mode,
       hostSelector: config.hostSelector,
       hostPlacement: config.hostPlacement,
+      placeholder: config.placeholder,
+      popupPlaceholder: config.popupPlaceholder,
+      launcherButtonLabel: config.launcherButtonLabel,
+      popupButtonLabel: config.popupButtonLabel,
+      welcomeMessage: config.welcomeMessage,
+      brandLabel: config.brandLabel,
       sessionId: state.sessionId,
       session_id: state.sessionId,
       pageUrl: config.currentUrl,
@@ -548,6 +558,21 @@
               window.BelivAIAgentConfig.placeholder = nextContext.launcherPlaceholder;
             }
           }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "popupPlaceholder")) {
+            window.BelivAIAgentConfig.popupPlaceholder = nextContext.popupPlaceholder;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "launcherButtonLabel")) {
+            window.BelivAIAgentConfig.launcherButtonLabel = nextContext.launcherButtonLabel;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "popupButtonLabel")) {
+            window.BelivAIAgentConfig.popupButtonLabel = nextContext.popupButtonLabel;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "welcomeMessage")) {
+            window.BelivAIAgentConfig.welcomeMessage = nextContext.welcomeMessage;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "brandLabel")) {
+            window.BelivAIAgentConfig.brandLabel = nextContext.brandLabel;
+          }
           if (Object.prototype.hasOwnProperty.call(nextContext, "currentUrl")) {
             window.BelivAIAgentConfig.currentUrl = nextContext.currentUrl;
           }
@@ -600,6 +625,11 @@
       hostPlacement: liveConfig.hostPlacement,
       placeholder: liveConfig.placeholder,
       launcherPlaceholder: liveConfig.launcherPlaceholder,
+      popupPlaceholder: liveConfig.popupPlaceholder,
+      launcherButtonLabel: liveConfig.launcherButtonLabel,
+      popupButtonLabel: liveConfig.popupButtonLabel,
+      welcomeMessage: liveConfig.welcomeMessage,
+      brandLabel: liveConfig.brandLabel,
       currentUrl: liveConfig.currentUrl
     };
   }
@@ -611,6 +641,7 @@
 
     var previousMode = config.mode;
     var hasSubtitleOverride = Object.prototype.hasOwnProperty.call(nextContext, "subtitle");
+    var hasWelcomeOverride = Object.prototype.hasOwnProperty.call(nextContext, "welcomeMessage");
     var nextTitle = normalizeText(nextContext.title, config.title);
     var nextSubtitle = normalizeText(nextContext.subtitle, config.subtitle);
     var nextSiteName = normalizeText(nextContext.siteName, config.siteName);
@@ -623,6 +654,14 @@
       nextContext.placeholder,
       normalizeText(nextContext.launcherPlaceholder, config.placeholder)
     );
+    var nextPopupPlaceholder = normalizeText(nextContext.popupPlaceholder, config.popupPlaceholder);
+    var nextLauncherButtonLabel = normalizeText(
+      nextContext.launcherButtonLabel,
+      config.launcherButtonLabel
+    );
+    var nextPopupButtonLabel = normalizeText(nextContext.popupButtonLabel, config.popupButtonLabel);
+    var nextWelcomeMessage = normalizeText(nextContext.welcomeMessage, config.welcomeMessage);
+    var nextBrandLabel = normalizeText(nextContext.brandLabel, config.brandLabel);
     var nextCurrentUrl = normalizeUrl(nextContext.currentUrl, config.currentUrl || window.location.href);
     var nextDomainFallback =
       domainFromUrl(nextCurrentUrl) || config.domain || window.location.hostname || "";
@@ -638,6 +677,10 @@
     config.hostPlacement = nextHostPlacement;
     config.placeholder = nextLauncherPlaceholder;
     config.launcherPlaceholder = nextLauncherPlaceholder;
+    config.popupPlaceholder = nextPopupPlaceholder;
+    config.launcherButtonLabel = nextLauncherButtonLabel;
+    config.popupButtonLabel = nextPopupButtonLabel;
+    config.brandLabel = nextBrandLabel;
     config.currentUrl = nextCurrentUrl;
 
     if (autoSubtitle && !hasSubtitleOverride) {
@@ -645,8 +688,10 @@
     } else {
       config.subtitle = nextSubtitle;
     }
-    if (autoWelcomeMessage) {
+    if (autoWelcomeMessage && !hasWelcomeOverride) {
       config.welcomeMessage = "Hi! I can help you find information from " + config.siteName + ".";
+    } else {
+      config.welcomeMessage = nextWelcomeMessage;
     }
 
     if (refs.titleText) {
@@ -657,6 +702,21 @@
     }
     if (refs.launcherInput) {
       refs.launcherInput.placeholder = config.placeholder;
+    }
+    if (refs.chatInput) {
+      refs.chatInput.placeholder = config.popupPlaceholder;
+    }
+    if (refs.launcherLabel) {
+      refs.launcherLabel.textContent = config.launcherButtonLabel;
+    }
+    if (refs.launcherButton) {
+      refs.launcherButton.setAttribute("aria-label", config.launcherButtonLabel);
+    }
+    if (refs.chatButton) {
+      refs.chatButton.textContent = config.popupButtonLabel;
+    }
+    if (refs.brandText) {
+      refs.brandText.textContent = config.brandLabel;
     }
     syncPositionClass();
     syncThemeClass();
