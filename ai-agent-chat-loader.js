@@ -97,6 +97,7 @@
   var refs = {
     hostRoot: null,
     shell: null,
+    siteFavicon: null,
     titleText: null,
     brandText: null,
     launcherForm: null,
@@ -149,8 +150,11 @@
       '    <section class="beliv-panel" role="dialog" aria-modal="true">' +
       '      <header class="beliv-header">' +
       '        <div class="beliv-heading">' +
-      '          <h2 class="beliv-title"></h2>' +
-      '          <p class="beliv-subtitle"></p>' +
+      '          <img class="beliv-site-favicon" alt="" aria-hidden="true" referrerpolicy="no-referrer" />' +
+      '          <div class="beliv-heading-copy">' +
+      '            <h2 class="beliv-title"></h2>' +
+      '            <p class="beliv-subtitle"></p>' +
+      "          </div>" +
       "        </div>" +
       '        <button class="beliv-close" type="button" aria-label="Close chat">&times;</button>' +
       "      </header>" +
@@ -167,6 +171,7 @@
     placeHostRoot();
 
     refs.shell = root.querySelector(".beliv-shell");
+    refs.siteFavicon = root.querySelector(".beliv-site-favicon");
     syncPositionClass();
     syncThemeClass();
     syncModeClass();
@@ -193,6 +198,7 @@
     refs.launcherLabel.textContent = config.launcherButtonLabel;
     refs.launcherButton.setAttribute("aria-label", config.launcherButtonLabel);
     refs.chatButton.textContent = config.popupButtonLabel;
+    syncHostFavicon();
 
     bindEvents(root);
     bindPublicApi();
@@ -718,6 +724,7 @@
     if (refs.brandText) {
       refs.brandText.textContent = config.brandLabel;
     }
+    syncHostFavicon();
     syncPositionClass();
     syncThemeClass();
     syncModeClass();
@@ -814,6 +821,64 @@
       return document.body;
     }
     return resolveHostTarget();
+  }
+
+  function syncHostFavicon() {
+    if (!refs.siteFavicon) {
+      return;
+    }
+
+    var candidates = resolveFaviconCandidates(config.domain, config.currentUrl);
+    refs.siteFavicon._belivCandidates = candidates;
+    refs.siteFavicon._belivIndex = 0;
+
+    if (!candidates.length) {
+      refs.siteFavicon.style.display = "none";
+      refs.siteFavicon.removeAttribute("src");
+      return;
+    }
+
+    refs.siteFavicon.style.display = "block";
+    refs.siteFavicon.src = candidates[0];
+    refs.siteFavicon.onerror = function () {
+      var nextIndex = (refs.siteFavicon._belivIndex || 0) + 1;
+      if (nextIndex >= refs.siteFavicon._belivCandidates.length) {
+        refs.siteFavicon.style.display = "none";
+        return;
+      }
+      refs.siteFavicon._belivIndex = nextIndex;
+      refs.siteFavicon.src = refs.siteFavicon._belivCandidates[nextIndex];
+    };
+  }
+
+  function resolveFaviconCandidates(domain, currentUrl) {
+    var candidates = [];
+    var hostFromUrl = domainFromUrl(currentUrl);
+    var normalizedHost = normalizeDomain(
+      domain,
+      hostFromUrl || window.location.hostname || ""
+    );
+
+    if (currentUrl) {
+      try {
+        candidates.push(new URL("/favicon.ico", currentUrl).toString());
+      } catch (error) {
+        /* no-op */
+      }
+    }
+
+    if (normalizedHost) {
+      var protocol = window.location.protocol === "http:" ? "http://" : "https://";
+      var direct = protocol + normalizedHost + "/favicon.ico";
+      if (candidates.indexOf(direct) === -1) {
+        candidates.push(direct);
+      }
+      candidates.push(
+        "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(normalizedHost) + "&sz=64"
+      );
+    }
+
+    return candidates;
   }
 
   function normalizeText(value, fallback) {
@@ -1230,7 +1295,25 @@
       "  box-shadow:inset 0 -1px 0 rgba(255,255,255,0.2);" +
       "  animation:belivAurora 8.4s ease-in-out infinite;" +
       "}" +
-      ".beliv-heading{min-width:0;}" +
+      ".beliv-heading{" +
+      "  min-width:0;" +
+      "  display:flex;" +
+      "  align-items:flex-start;" +
+      "  gap:10px;" +
+      "}" +
+      ".beliv-heading-copy{" +
+      "  min-width:0;" +
+      "}" +
+      ".beliv-site-favicon{" +
+      "  width:26px;" +
+      "  height:26px;" +
+      "  border-radius:7px;" +
+      "  flex:0 0 26px;" +
+      "  object-fit:cover;" +
+      "  border:1px solid rgba(255,255,255,0.54);" +
+      "  background:rgba(255,255,255,0.22);" +
+      "  box-shadow:0 5px 14px rgba(6,16,38,0.22);" +
+      "}" +
       ".beliv-title{" +
       "  margin:0 0 4px 0;" +
       "  font-size:18px;" +
@@ -1359,6 +1442,10 @@
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-launcher-input::placeholder{" +
       "  color:#91a4b7;" +
+      "}" +
+      ".beliv-shell.beliv-theme-dark .beliv-site-favicon{" +
+      "  border-color:rgba(255,255,255,0.34);" +
+      "  background:rgba(255,255,255,0.18);" +
       "}" +
       ".beliv-shell.beliv-theme-dark.beliv-mode-fullcenter .beliv-launcher-input::placeholder{" +
       "  color:#9dc1e4;" +
@@ -1497,6 +1584,15 @@
       "  }" +
       "  .beliv-header{" +
       "    padding:15px 14px 14px;" +
+      "  }" +
+      "  .beliv-heading{" +
+      "    gap:8px;" +
+      "  }" +
+      "  .beliv-site-favicon{" +
+      "    width:24px;" +
+      "    height:24px;" +
+      "    flex-basis:24px;" +
+      "    border-radius:6px;" +
       "  }" +
       "  .beliv-title{" +
       "    font-size:19px;" +
