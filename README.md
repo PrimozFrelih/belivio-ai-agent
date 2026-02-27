@@ -19,6 +19,7 @@ Optional config before the script:
     title: "Website AI Helper",
     siteName: "Acme Help Center",
     domain: "acme.com",
+    mainColor: "#1877f2",
     theme: "light", // "light" or "dark"
     mode: "fullcenter", // "compact", "fullcenter", or "popupfloat"
     hostSelector: "#widgetMount",
@@ -41,6 +42,7 @@ The widget reads these at prompt submit time, so you can expose them as page inp
 - `subtitle`
 - `siteName`
 - `domain`
+- `mainColor`
 - `theme`
 - `mode`
 - `hostSelector`
@@ -56,11 +58,13 @@ The widget reads these at prompt submit time, so you can expose them as page inp
 
 `mode="fullcenter"` renders a wide launcher inside `hostSelector`; on submit it opens a large centered popup chat with backdrop blur.
 `mode="popupfloat"` shows a floating agent icon button that opens the popup chat.
+Input length is capped at 200 characters per message.
 
 ```html
 <script>
   window.BelivAIAgentConfig.siteName = "Acme Help Center";
   window.BelivAIAgentConfig.domain = "docs.acme.com";
+  window.BelivAIAgentConfig.mainColor = "#1877f2";
   window.BelivAIAgentConfig.theme = "dark";
   window.BelivAIAgentConfig.mode = "popupfloat";
   window.BelivAIAgentConfig.hostSelector = "#widgetMount";
@@ -82,6 +86,7 @@ The widget reads these at prompt submit time, so you can expose them as page inp
     subtitle: window.BelivAIAgentConfig.subtitle,
     siteName: window.BelivAIAgentConfig.siteName,
     domain: window.BelivAIAgentConfig.domain,
+    mainColor: window.BelivAIAgentConfig.mainColor,
     theme: window.BelivAIAgentConfig.theme,
     mode: window.BelivAIAgentConfig.mode,
     hostSelector: window.BelivAIAgentConfig.hostSelector,
@@ -139,6 +144,7 @@ git push origin v1.0.0
 - `subtitle`
 - `siteName`
 - `domain`
+- `mainColor` (primary color for widget look and feel)
 - `theme` (`light` or `dark`)
 - `mode` (`compact`, `fullcenter`, or `popupfloat`)
 - `hostSelector` (id, class, or tag selector)
@@ -165,10 +171,10 @@ git push origin v1.0.0
 ## Webhook request body
 
 Each message sends JSON with these fields (plus `payload` overrides):
-- `prompt`, `message`, `question`
-- `title`, `subtitle`, `siteName`, `domain`, `theme`, `mode`
+- `prompt`, `message`, `question`, `chatInput`, `ChatInput`
+- `title`, `subtitle`, `siteName`, `domain`, `mainColor`, `theme`, `mode`
 - `hostSelector`, `hostPlacement`, `placeholder`, `popupPlaceholder`
 - `launcherButtonLabel`, `popupButtonLabel`, `welcomeMessage`, `disclaimer`, `brandLabel`
 - `sessionId`, `session_id`
-- `pageUrl`, `currentUrl`, `pageTitle`, `host`, `referrer`
+- `pageUrl`, `currentUrl`, `current_url`, `pageTitle`, `host`, `referrer`
 - `history` (chat history array with `role` and `content`)

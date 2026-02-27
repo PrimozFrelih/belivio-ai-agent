@@ -7,12 +7,15 @@
   }
   window.__belivAIAgentLoaded = true;
 
-  var DEFAULT_ENDPOINT = "https://app.beliv.io/webhook/ai-chat-prompt";
+  var DEFAULT_ENDPOINT = "https://app.beliv.io/internal/webhook-test/ai-agent";
+  var SESSION_STORAGE_KEY = "beliv_ai_agent_session_id";
+  var MAX_INPUT_LENGTH = 200;
   var DEFAULT_CONFIG = {
     title: "Beliv AI Agent",
     subtitle: "Ask anything about this website.",
     siteName: "this website",
     domain: "",
+    mainColor: "#1877f2",
     theme: "light",
     mode: "fullcenter",
     hostSelector: "",
@@ -50,11 +53,29 @@
     runtimeConfig.placeholder,
     normalizeText(runtimeConfig.launcherPlaceholder, DEFAULT_CONFIG.launcherPlaceholder)
   );
+  var resolvedMainColor = normalizeColor(runtimeConfig.mainColor, "");
+  var resolvedAccentColor = normalizeColor(
+    resolvedMainColor || runtimeConfig.accentColor,
+    DEFAULT_CONFIG.accentColor
+  );
+  var resolvedAccentColorDark = normalizeColor(
+    resolvedMainColor
+      ? deriveColor(resolvedAccentColor, -0.22, resolvedAccentColor)
+      : runtimeConfig.accentColorDark,
+    DEFAULT_CONFIG.accentColorDark
+  );
+  var resolvedAccentColorLight = normalizeColor(
+    resolvedMainColor
+      ? deriveColor(resolvedAccentColor, 0.22, resolvedAccentColor)
+      : deriveColor(resolvedAccentColor, 0.16, resolvedAccentColor),
+    resolvedAccentColor
+  );
   var config = {
     title: normalizeText(runtimeConfig.title, DEFAULT_CONFIG.title),
     subtitle: normalizeText(runtimeConfig.subtitle, DEFAULT_CONFIG.subtitle),
     siteName: normalizeText(runtimeConfig.siteName, detectedSiteName),
     domain: normalizeDomain(runtimeConfig.domain, detectedRuntimeDomain),
+    mainColor: resolvedAccentColor,
     theme: normalizeTheme(runtimeConfig.theme, DEFAULT_CONFIG.theme),
     mode: normalizeMode(runtimeConfig.mode, DEFAULT_CONFIG.mode),
     hostSelector: normalizeSelector(runtimeConfig.hostSelector),
@@ -70,15 +91,16 @@
     popupButtonLabel: normalizeText(runtimeConfig.popupButtonLabel, DEFAULT_CONFIG.popupButtonLabel),
     welcomeMessage: normalizeText(runtimeConfig.welcomeMessage, DEFAULT_CONFIG.welcomeMessage),
     disclaimer: normalizeOptionalText(runtimeConfig.disclaimer, ""),
-    accentColor: normalizeColor(runtimeConfig.accentColor, DEFAULT_CONFIG.accentColor),
-    accentColorDark: normalizeColor(runtimeConfig.accentColorDark, DEFAULT_CONFIG.accentColorDark),
+    accentColor: resolvedAccentColor,
+    accentColorDark: resolvedAccentColorDark,
+    accentColorLight: resolvedAccentColorLight,
     textColor: normalizeColor(runtimeConfig.textColor, DEFAULT_CONFIG.textColor),
     position: normalizePosition(runtimeConfig.position, DEFAULT_CONFIG.position),
     zIndex: normalizeNumber(runtimeConfig.zIndex, DEFAULT_CONFIG.zIndex),
     popupWidth: normalizeSize(runtimeConfig.popupWidth, "420px", 320),
     popupHeight: normalizeSize(runtimeConfig.popupHeight, "620px", 360),
     brandLabel: normalizeText(runtimeConfig.brandLabel, DEFAULT_CONFIG.brandLabel),
-    endpoint: normalizeText(runtimeConfig.endpoint, DEFAULT_CONFIG.endpoint),
+    endpoint: DEFAULT_ENDPOINT,
     payload: isPlainObject(runtimeConfig.payload) ? runtimeConfig.payload : {}
   };
   if (autoSubtitle) {
@@ -91,10 +113,12 @@
   var state = {
     hasWelcomed: false,
     isOpen: false,
+    isClosing: false,
     isSending: false,
-    sessionId: createSessionId(),
+    sessionId: getSessionId(),
     messages: []
   };
+  var chatOpenFlashTimer = null;
 
   var refs = {
     hostRoot: null,
@@ -108,6 +132,7 @@
     launcherLabel: null,
     floatButton: null,
     modal: null,
+    panel: null,
     closeButton: null,
     messages: null,
     subtitleText: null,
@@ -139,6 +164,7 @@
       '<div class="beliv-shell">' +
       '  <form class="beliv-launcher" novalidate>' +
       '    <input class="beliv-launcher-input" type="text" autocomplete="off" />' +
+      '    <span class="beliv-launcher-flash" aria-hidden="true"></span>' +
       '    <button class="beliv-launcher-submit" type="submit" aria-label="Submit">' +
       '      <span class="beliv-launcher-label"></span>' +
       '      <span class="beliv-launcher-agent" aria-hidden="true"><i></i><i></i><b></b></span>' +
@@ -174,6 +200,7 @@
 
     refs.shell = root.querySelector(".beliv-shell");
     refs.siteFavicon = root.querySelector(".beliv-site-favicon");
+    applyColorVariables();
     syncPositionClass();
     syncThemeClass();
     syncModeClass();
@@ -185,6 +212,7 @@
     refs.launcherLabel = root.querySelector(".beliv-launcher-label");
     refs.floatButton = root.querySelector(".beliv-float-trigger");
     refs.modal = root.querySelector(".beliv-modal");
+    refs.panel = root.querySelector(".beliv-panel");
     refs.closeButton = root.querySelector(".beliv-close");
     refs.messages = root.querySelector(".beliv-messages");
     refs.subtitleText = root.querySelector(".beliv-subtitle");
@@ -197,20 +225,25 @@
     refs.brandText.textContent = config.brandLabel;
     refs.launcherInput.placeholder = config.placeholder;
     refs.chatInput.placeholder = config.popupPlaceholder;
+    refs.launcherInput.maxLength = MAX_INPUT_LENGTH;
+    refs.chatInput.maxLength = MAX_INPUT_LENGTH;
     refs.launcherLabel.textContent = config.launcherButtonLabel;
     refs.launcherButton.setAttribute("aria-label", config.launcherButtonLabel);
-    refs.chatButton.textContent = config.popupButtonLabel;
+    renderChatButtonIdle();
     syncHostFavicon();
 
     bindEvents(root);
     bindPublicApi();
+    triggerLauncherIntroFlash();
+    autoFocusLauncherOnMount();
   }
 
   function bindEvents(root) {
     refs.launcherForm.addEventListener("submit", function (event) {
       event.preventDefault();
-      var prompt = (refs.launcherInput.value || "").trim();
-      openModal();
+      var prompt = normalizePromptInput(refs.launcherInput.value || "");
+      triggerLauncherOpenEffects();
+      openModal("launcher");
       if (!prompt || state.isSending) {
         focusChatInput();
         return;
@@ -222,7 +255,7 @@
 
     refs.chatForm.addEventListener("submit", function (event) {
       event.preventDefault();
-      var prompt = (refs.chatInput.value || "").trim();
+      var prompt = normalizePromptInput(refs.chatInput.value || "");
       if (!prompt || state.isSending) {
         return;
       }
@@ -231,7 +264,7 @@
     });
 
     refs.floatButton.addEventListener("click", function () {
-      openModal();
+      openModal("float");
     });
 
     refs.closeButton.addEventListener("click", function () {
@@ -248,9 +281,32 @@
     });
   }
 
-  function openModal() {
+  function openModal(source) {
     if (!refs.modal || !refs.shell) {
       return;
+    }
+    state.isClosing = false;
+    refs.shell.classList.remove("beliv-closing-launcher");
+    if (refs.panel) {
+      refs.panel.classList.remove("beliv-panel-closing");
+    }
+    var shouldAnimateFromLauncher =
+      source === "launcher" &&
+      config.mode === "fullcenter" &&
+      !!refs.launcherForm &&
+      shouldUseLauncherMorphAnimation() &&
+      !state.isOpen;
+    var launcherRect = null;
+    if (shouldAnimateFromLauncher) {
+      var rect = refs.launcherForm.getBoundingClientRect();
+      if (rect && rect.width > 0 && rect.height > 0) {
+        launcherRect = {
+          left: rect.left,
+          top: rect.top,
+          width: rect.width,
+          height: rect.height
+        };
+      }
     }
     state.isOpen = true;
     placeHostRoot();
@@ -264,6 +320,11 @@
       appendMessage("assistant", config.welcomeMessage);
     }
 
+    if (shouldAnimateFromLauncher && launcherRect) {
+      runPanelOpenAnimationFromLauncher(launcherRect);
+    }
+
+    triggerChatComposerOpenFlash();
     focusChatInput();
   }
 
@@ -271,16 +332,22 @@
     if (!refs.modal || !refs.shell) {
       return;
     }
-    state.isOpen = false;
-    refs.modal.classList.remove("beliv-open");
-    refs.modal.setAttribute("aria-hidden", "true");
-    refs.shell.classList.remove("beliv-open");
-    placeHostRoot();
-    if (config.mode === "popupfloat" && refs.floatButton) {
-      refs.floatButton.focus();
+    if (state.isClosing) {
       return;
     }
-    refs.launcherInput.focus();
+
+    if (
+      config.mode === "fullcenter" &&
+      refs.panel &&
+      refs.launcherForm &&
+      shouldUseLauncherMorphAnimation() &&
+      state.isOpen
+    ) {
+      runPanelCloseAnimationToLauncher();
+      return;
+    }
+
+    finalizeCloseModal();
   }
 
   function focusChatInput() {
@@ -291,12 +358,355 @@
     }, 40);
   }
 
+  function shouldUseLauncherMorphAnimation() {
+    if (config.mode !== "fullcenter") {
+      return false;
+    }
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return true;
+    }
+    return !window.matchMedia("(max-width: 640px)").matches;
+  }
+
+  function renderChatButtonIdle() {
+    if (!refs.chatButton) {
+      return;
+    }
+    refs.chatButton.innerHTML = '<span class="beliv-chat-submit-icon" aria-hidden="true"></span>';
+    refs.chatButton.setAttribute("aria-label", config.popupButtonLabel);
+  }
+
+  function triggerChatComposerOpenFlash() {
+    if (!refs.chatForm || !refs.chatInput) {
+      return;
+    }
+
+    if (chatOpenFlashTimer) {
+      window.clearTimeout(chatOpenFlashTimer);
+      chatOpenFlashTimer = null;
+    }
+
+    refs.chatForm.classList.remove("beliv-chat-open-flash");
+    refs.chatInput.classList.remove("beliv-chat-input-open-flash");
+    void refs.chatForm.offsetWidth;
+    refs.chatForm.classList.add("beliv-chat-open-flash");
+    refs.chatInput.classList.add("beliv-chat-input-open-flash");
+
+    chatOpenFlashTimer = window.setTimeout(function () {
+      if (refs.chatForm) {
+        refs.chatForm.classList.remove("beliv-chat-open-flash");
+      }
+      if (refs.chatInput) {
+        refs.chatInput.classList.remove("beliv-chat-input-open-flash");
+      }
+      chatOpenFlashTimer = null;
+    }, 1300);
+  }
+
+  function autoFocusLauncherOnMount() {
+    if (!refs.launcherInput || config.mode === "popupfloat") {
+      return;
+    }
+    setTimeout(function () {
+      if (!refs.launcherInput || state.isOpen) {
+        return;
+      }
+      try {
+        refs.launcherInput.focus({ preventScroll: true });
+      } catch (error) {
+        refs.launcherInput.focus();
+      }
+    }, 50);
+  }
+
+  function triggerLauncherIntroFlash() {
+    if (!refs.launcherForm || config.mode !== "fullcenter") {
+      return;
+    }
+
+    var runFlash = function () {
+      if (!refs.launcherForm || config.mode !== "fullcenter") {
+        return;
+      }
+      refs.launcherForm.classList.remove("beliv-launcher-intro-flash");
+      void refs.launcherForm.offsetWidth;
+      refs.launcherForm.classList.add("beliv-launcher-intro-flash");
+      window.setTimeout(function () {
+        if (refs.launcherForm) {
+          refs.launcherForm.classList.remove("beliv-launcher-intro-flash");
+        }
+      }, 2500);
+    };
+
+    if (typeof window.requestAnimationFrame === "function") {
+      window.requestAnimationFrame(function () {
+        window.setTimeout(runFlash, 180);
+      });
+      return;
+    }
+    window.setTimeout(runFlash, 220);
+  }
+
+  function triggerLauncherOpenEffects() {
+    if (config.mode !== "fullcenter") {
+      return;
+    }
+
+    if (refs.launcherForm) {
+      refs.launcherForm.classList.remove("beliv-launcher-burst");
+      void refs.launcherForm.offsetWidth;
+      refs.launcherForm.classList.add("beliv-launcher-burst");
+      window.setTimeout(function () {
+        if (refs.launcherForm) {
+          refs.launcherForm.classList.remove("beliv-launcher-burst");
+        }
+      }, 680);
+    }
+
+    if (refs.launcherButton) {
+      refs.launcherButton.classList.remove("beliv-submit-burst");
+      void refs.launcherButton.offsetWidth;
+      refs.launcherButton.classList.add("beliv-submit-burst");
+      window.setTimeout(function () {
+        if (refs.launcherButton) {
+          refs.launcherButton.classList.remove("beliv-submit-burst");
+        }
+      }, 680);
+    }
+  }
+
+  function runPanelOpenAnimationFromLauncher(launcherRect) {
+    if (!refs.panel || !refs.shell || !launcherRect || config.mode !== "fullcenter") {
+      return;
+    }
+
+    var startAnimation = function () {
+      if (!refs.panel || !refs.shell || !state.isOpen) {
+        return;
+      }
+
+      var panelRect = refs.panel.getBoundingClientRect();
+      if (!panelRect || panelRect.width <= 0 || panelRect.height <= 0) {
+        return;
+      }
+
+      var offsetX = launcherRect.left - panelRect.left;
+      var offsetY = launcherRect.top - panelRect.top;
+      var scaleX = Math.max(0.18, Math.min(1.08, launcherRect.width / panelRect.width));
+      var scaleY = Math.max(0.1, Math.min(1.08, launcherRect.height / panelRect.height));
+      var fromRadius = window.getComputedStyle(refs.launcherForm).borderRadius || "14px";
+      var toRadius = window.getComputedStyle(refs.panel).borderRadius || "22px";
+
+      refs.shell.classList.add("beliv-opening-launcher");
+      refs.panel.classList.add("beliv-panel-opening");
+
+      if (typeof refs.panel.animate !== "function") {
+        window.setTimeout(function () {
+          if (refs.shell) {
+            refs.shell.classList.remove("beliv-opening-launcher");
+          }
+          if (refs.panel) {
+            refs.panel.classList.remove("beliv-panel-opening");
+          }
+        }, 520);
+        return;
+      }
+
+      var animation = refs.panel.animate(
+        [
+          {
+            transform:
+              "translate(-50%,-50%) translate(" +
+              offsetX +
+              "px," +
+              offsetY +
+              "px) scale(" +
+              scaleX +
+              "," +
+              scaleY +
+              ")",
+            opacity: 0.78,
+            borderRadius: fromRadius
+          },
+          {
+            transform: "translate(-50%,-50%) translate(0,0) scale(1,1)",
+            opacity: 1,
+            borderRadius: toRadius
+          }
+        ],
+        {
+          duration: 470,
+          easing: "cubic-bezier(0.19, 0.82, 0.22, 1)",
+          fill: "both"
+        }
+      );
+
+      var cleanup = function () {
+        if (refs.shell) {
+          refs.shell.classList.remove("beliv-opening-launcher");
+        }
+        if (refs.panel) {
+          refs.panel.classList.remove("beliv-panel-opening");
+        }
+      };
+
+      animation.onfinish = cleanup;
+      animation.oncancel = cleanup;
+    };
+
+    if (typeof window.requestAnimationFrame === "function") {
+      window.requestAnimationFrame(startAnimation);
+      return;
+    }
+    window.setTimeout(startAnimation, 16);
+  }
+
+  function runPanelCloseAnimationToLauncher() {
+    if (!refs.panel || !refs.launcherForm || !refs.shell) {
+      finalizeCloseModal();
+      return;
+    }
+
+    state.isClosing = true;
+    refs.shell.classList.add("beliv-closing-launcher");
+    refs.shell.classList.remove("beliv-opening-launcher");
+    refs.panel.classList.remove("beliv-panel-opening");
+    refs.panel.classList.add("beliv-panel-closing");
+
+    var startAnimation = function () {
+      if (!refs.panel || !refs.launcherForm || !refs.shell) {
+        state.isClosing = false;
+        finalizeCloseModal();
+        return;
+      }
+
+      var panelRect = refs.panel.getBoundingClientRect();
+      var launcherRect = refs.launcherForm.getBoundingClientRect();
+      if (
+        !panelRect ||
+        !launcherRect ||
+        panelRect.width <= 0 ||
+        panelRect.height <= 0 ||
+        launcherRect.width <= 0 ||
+        launcherRect.height <= 0
+      ) {
+        state.isClosing = false;
+        finalizeCloseModal();
+        return;
+      }
+
+      var offsetX = launcherRect.left - panelRect.left;
+      var offsetY = launcherRect.top - panelRect.top;
+      var scaleX = Math.max(0.18, Math.min(1.08, launcherRect.width / panelRect.width));
+      var scaleY = Math.max(0.1, Math.min(1.08, launcherRect.height / panelRect.height));
+      var toRadius = window.getComputedStyle(refs.launcherForm).borderRadius || "14px";
+      var fromRadius = window.getComputedStyle(refs.panel).borderRadius || "22px";
+
+      var finish = function () {
+        state.isClosing = false;
+        finalizeCloseModal();
+      };
+
+      if (typeof refs.panel.animate !== "function") {
+        window.setTimeout(finish, 420);
+        return;
+      }
+
+      var animation = refs.panel.animate(
+        [
+          {
+            transform: "translate(-50%,-50%) translate(0,0) scale(1,1)",
+            opacity: 1,
+            borderRadius: fromRadius
+          },
+          {
+            transform:
+              "translate(-50%,-50%) translate(" +
+              offsetX +
+              "px," +
+              offsetY +
+              "px) scale(" +
+              scaleX +
+              "," +
+              scaleY +
+              ")",
+            opacity: 0.78,
+            borderRadius: toRadius
+          }
+        ],
+        {
+          duration: 420,
+          easing: "cubic-bezier(0.4, 0, 0.2, 1)",
+          fill: "both"
+        }
+      );
+      animation.onfinish = finish;
+      animation.oncancel = finish;
+    };
+
+    if (typeof window.requestAnimationFrame === "function") {
+      window.requestAnimationFrame(startAnimation);
+      return;
+    }
+    window.setTimeout(startAnimation, 16);
+  }
+
+  function finalizeCloseModal() {
+    state.isOpen = false;
+    state.isClosing = false;
+    refs.modal.classList.remove("beliv-open");
+    refs.modal.setAttribute("aria-hidden", "true");
+    refs.shell.classList.remove("beliv-open", "beliv-opening-launcher", "beliv-closing-launcher");
+    if (refs.panel) {
+      refs.panel.classList.remove("beliv-panel-opening", "beliv-panel-closing");
+    }
+    if (chatOpenFlashTimer) {
+      window.clearTimeout(chatOpenFlashTimer);
+      chatOpenFlashTimer = null;
+    }
+    if (refs.chatForm) {
+      refs.chatForm.classList.remove("beliv-chat-open-flash");
+    }
+    if (refs.chatInput) {
+      refs.chatInput.classList.remove("beliv-chat-input-open-flash");
+    }
+    placeHostRoot();
+    if (config.mode === "popupfloat" && refs.floatButton) {
+      refs.floatButton.focus();
+      return;
+    }
+    refs.launcherInput.focus();
+  }
+
+  function normalizePromptInput(value) {
+    if (typeof value !== "string") {
+      return "";
+    }
+    var normalized = value.trim();
+    if (!normalized) {
+      return "";
+    }
+    if (normalized.length > MAX_INPUT_LENGTH) {
+      normalized = normalized.slice(0, MAX_INPUT_LENGTH);
+    }
+    return normalized;
+  }
+
   function setSending(isSending) {
     state.isSending = isSending;
-    refs.launcherInput.disabled = isSending;
+    refs.launcherInput.disabled = false;
+    refs.chatInput.disabled = false;
     refs.launcherButton.disabled = isSending;
-    refs.chatInput.disabled = isSending;
     refs.chatButton.disabled = isSending;
+    if (refs.chatButton) {
+      if (isSending) {
+        refs.chatButton.innerHTML =
+          '<span class="beliv-wait-dots" aria-hidden="true"><i></i><i></i><i></i></span>';
+        refs.chatButton.setAttribute("aria-label", "Waiting for response");
+      } else {
+        renderChatButtonIdle();
+      }
+    }
   }
 
   function appendMessage(role, text, extraClass) {
@@ -371,7 +781,7 @@
     if (state.isSending || typeof prompt !== "string") {
       return;
     }
-    var normalizedPrompt = prompt.trim();
+    var normalizedPrompt = normalizePromptInput(prompt);
     if (!normalizedPrompt) {
       return;
     }
@@ -416,10 +826,14 @@
       prompt: prompt,
       message: prompt,
       question: prompt,
+      chatInput: prompt,
+      ChatInput: prompt,
+      SessionID: state.sessionId,
       title: config.title,
       subtitle: config.subtitle,
       siteName: config.siteName,
       domain: config.domain,
+      mainColor: config.mainColor,
       theme: config.theme,
       mode: config.mode,
       hostSelector: config.hostSelector,
@@ -434,7 +848,9 @@
       sessionId: state.sessionId,
       session_id: state.sessionId,
       pageUrl: config.currentUrl,
+      CurrentURL: config.currentUrl,
       currentUrl: config.currentUrl,
+      current_url: config.currentUrl,
       pageTitle: document.title || "",
       host: window.location.host,
       referrer: document.referrer || "",
@@ -480,7 +896,9 @@
     if (contentType.indexOf("application/json") > -1) {
       data = await response.json();
     } else {
-      data = await response.text();
+      var rawText = await response.text();
+      var parsedText = tryParseJsonText(rawText);
+      data = parsedText !== null ? parsedText : rawText;
     }
 
     if (!response.ok) {
@@ -496,7 +914,15 @@
     }
 
     if (typeof data === "string") {
-      return data.trim();
+      var trimmed = data.trim();
+      if (!trimmed) {
+        return "";
+      }
+      var parsedString = tryParseJsonText(trimmed);
+      if (parsedString !== null) {
+        return normalizeAssistantText(parsedString);
+      }
+      return trimmed;
     }
 
     if (Array.isArray(data)) {
@@ -537,6 +963,25 @@
     }
 
     return String(data).trim();
+  }
+
+  function tryParseJsonText(value) {
+    if (typeof value !== "string") {
+      return null;
+    }
+    var trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+    var firstChar = trimmed.charAt(0);
+    if (firstChar !== "{" && firstChar !== "[" && firstChar !== '"') {
+      return null;
+    }
+    try {
+      return JSON.parse(trimmed);
+    } catch (error) {
+      return null;
+    }
   }
 
   function readPath(object, path) {
@@ -581,6 +1026,9 @@
           }
           if (Object.prototype.hasOwnProperty.call(nextContext, "domain")) {
             window.BelivAIAgentConfig.domain = nextContext.domain;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "mainColor")) {
+            window.BelivAIAgentConfig.mainColor = nextContext.mainColor;
           }
           if (Object.prototype.hasOwnProperty.call(nextContext, "theme")) {
             window.BelivAIAgentConfig.theme = nextContext.theme;
@@ -632,11 +1080,12 @@
         applyContextOverrides(nextContext);
       },
       ask: function (prompt) {
-        if (typeof prompt !== "string" || !prompt.trim()) {
+        var normalizedPrompt = normalizePromptInput(prompt);
+        if (!normalizedPrompt) {
           openModal();
           return;
         }
-        sendPrompt(prompt.trim());
+        sendPrompt(normalizedPrompt);
       }
     };
   }
@@ -670,6 +1119,7 @@
       subtitle: liveConfig.subtitle,
       siteName: liveConfig.siteName,
       domain: liveConfig.domain,
+      mainColor: liveConfig.mainColor,
       theme: liveConfig.theme,
       position: liveConfig.position,
       mode: liveConfig.mode,
@@ -695,9 +1145,28 @@
     var previousMode = config.mode;
     var hasSubtitleOverride = Object.prototype.hasOwnProperty.call(nextContext, "subtitle");
     var hasWelcomeOverride = Object.prototype.hasOwnProperty.call(nextContext, "welcomeMessage");
+    var hasMainColorOverride = Object.prototype.hasOwnProperty.call(nextContext, "mainColor");
+    var hasAccentColorOverride = Object.prototype.hasOwnProperty.call(nextContext, "accentColor");
     var nextTitle = normalizeText(nextContext.title, config.title);
     var nextSubtitle = normalizeText(nextContext.subtitle, config.subtitle);
     var nextSiteName = normalizeText(nextContext.siteName, config.siteName);
+    var nextMainColor = normalizeColor(nextContext.mainColor, config.mainColor);
+    var nextAccentColor = normalizeColor(
+      hasMainColorOverride ? nextMainColor : nextContext.accentColor,
+      config.accentColor
+    );
+    var nextAccentColorDark = normalizeColor(
+      nextContext.accentColorDark,
+      hasMainColorOverride || hasAccentColorOverride
+        ? deriveColor(nextAccentColor, -0.22, config.accentColorDark)
+        : config.accentColorDark
+    );
+    var nextAccentColorLight = normalizeColor(
+      nextContext.accentColorLight,
+      hasMainColorOverride || hasAccentColorOverride
+        ? deriveColor(nextAccentColor, 0.22, config.accentColorLight)
+        : config.accentColorLight
+    );
     var nextTheme = normalizeTheme(nextContext.theme, config.theme);
     var nextPosition = normalizePosition(nextContext.position, config.position);
     var nextMode = normalizeMode(nextContext.mode, config.mode);
@@ -724,6 +1193,10 @@
     config.title = nextTitle;
     config.siteName = nextSiteName;
     config.domain = nextDomain;
+    config.mainColor = nextAccentColor;
+    config.accentColor = nextAccentColor;
+    config.accentColorDark = nextAccentColorDark;
+    config.accentColorLight = nextAccentColorLight;
     config.theme = nextTheme;
     config.position = nextPosition;
     config.mode = nextMode;
@@ -768,11 +1241,14 @@
       refs.launcherButton.setAttribute("aria-label", config.launcherButtonLabel);
     }
     if (refs.chatButton) {
-      refs.chatButton.textContent = config.popupButtonLabel;
+      if (!state.isSending) {
+        renderChatButtonIdle();
+      }
     }
     if (refs.brandText) {
       refs.brandText.textContent = config.brandLabel;
     }
+    applyColorVariables();
     syncDisclaimerMessage();
     syncHostFavicon();
     syncPositionClass();
@@ -789,6 +1265,15 @@
       refs.shell.classList.remove("beliv-theme-light", "beliv-theme-dark");
       refs.shell.classList.add(config.theme === "dark" ? "beliv-theme-dark" : "beliv-theme-light");
     }
+  }
+
+  function applyColorVariables() {
+    if (!refs.shell) {
+      return;
+    }
+    refs.shell.style.setProperty("--beliv-accent", config.accentColor);
+    refs.shell.style.setProperty("--beliv-accent-dark", config.accentColorDark);
+    refs.shell.style.setProperty("--beliv-accent-light", config.accentColorLight);
   }
 
   function syncPositionClass() {
@@ -1104,6 +1589,75 @@
     return probe.color ? value.trim() : fallback;
   }
 
+  function deriveColor(base, amount, fallback) {
+    var rgb = parseColor(base);
+    if (!rgb) {
+      return fallback;
+    }
+    var ratio = Number(amount);
+    if (!isFinite(ratio)) {
+      return fallback;
+    }
+
+    var r = shiftChannel(rgb.r, ratio);
+    var g = shiftChannel(rgb.g, ratio);
+    var b = shiftChannel(rgb.b, ratio);
+    return "rgb(" + r + ", " + g + ", " + b + ")";
+  }
+
+  function shiftChannel(channel, ratio) {
+    var value = Number(channel);
+    if (!isFinite(value)) {
+      return 0;
+    }
+    if (ratio < 0) {
+      return Math.max(0, Math.round(value * (1 + ratio)));
+    }
+    return Math.min(255, Math.round(value + (255 - value) * ratio));
+  }
+
+  function parseColor(value) {
+    if (typeof value !== "string") {
+      return null;
+    }
+    var color = value.trim().toLowerCase();
+    if (!color) {
+      return null;
+    }
+
+    var hex = color.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+    if (hex) {
+      var normalized = hex[1];
+      if (normalized.length === 3) {
+        normalized =
+          normalized.charAt(0) +
+          normalized.charAt(0) +
+          normalized.charAt(1) +
+          normalized.charAt(1) +
+          normalized.charAt(2) +
+          normalized.charAt(2);
+      }
+      return {
+        r: parseInt(normalized.slice(0, 2), 16),
+        g: parseInt(normalized.slice(2, 4), 16),
+        b: parseInt(normalized.slice(4, 6), 16)
+      };
+    }
+
+    var rgb = color.match(
+      /^rgba?\(\s*([+-]?\d+)\s*,\s*([+-]?\d+)\s*,\s*([+-]?\d+)(?:\s*,\s*[0-9.]+\s*)?\)$/i
+    );
+    if (rgb) {
+      return {
+        r: Math.min(255, Math.max(0, Number(rgb[1]))),
+        g: Math.min(255, Math.max(0, Number(rgb[2]))),
+        b: Math.min(255, Math.max(0, Number(rgb[3])))
+      };
+    }
+
+    return null;
+  }
+
   function normalizeNumber(value, fallback) {
     var number = Number(value);
     return isFinite(number) ? number : fallback;
@@ -1111,6 +1665,23 @@
 
   function createSessionId() {
     return "beliv-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  }
+
+  function getSessionId() {
+    var fallback = createSessionId();
+    if (typeof window === "undefined" || !window.sessionStorage) {
+      return fallback;
+    }
+    try {
+      var existing = window.sessionStorage.getItem(SESSION_STORAGE_KEY);
+      if (typeof existing === "string" && existing.trim()) {
+        return existing.trim();
+      }
+      window.sessionStorage.setItem(SESSION_STORAGE_KEY, fallback);
+    } catch (error) {
+      return fallback;
+    }
+    return fallback;
   }
 
   function isPlainObject(value) {
@@ -1122,6 +1693,7 @@
       ".beliv-root{" +
       "  --beliv-accent:" + options.accentColor + ";" +
       "  --beliv-accent-dark:" + options.accentColorDark + ";" +
+      "  --beliv-accent-light:" + options.accentColorLight + ";" +
       "  --beliv-text:" + options.textColor + ";" +
       "  --beliv-z-index:" + options.zIndex + ";" +
       "  --beliv-popup-width:" + options.popupWidth + ";" +
@@ -1140,17 +1712,55 @@
       "  color:#e5edf6;" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-launcher{" +
-      "  position:relative;" +
-      "  left:auto !important;" +
-      "  right:auto !important;" +
-      "  bottom:auto;" +
+      "  position:relative !important;" +
+      "  inset:auto !important;" +
       "  width:min(100%,1020px);" +
       "  margin:0 auto;" +
-      "  border-radius:24px;" +
+      "  min-height:68px;" +
+      "  border-radius:14px;" +
       "  border:2px solid transparent;" +
-      "  background:linear-gradient(180deg,rgba(255,255,255,0.96),rgba(244,250,255,0.96)) padding-box,linear-gradient(126deg,rgba(80,166,255,0.95),rgba(83,112,255,0.92),rgba(72,238,227,0.9)) border-box;" +
-      "  box-shadow:0 20px 48px rgba(7,29,62,0.2),0 0 34px rgba(61,139,255,0.22);" +
+      "  background:linear-gradient(180deg,rgba(251,252,255,0.98),rgba(247,250,255,0.98)) padding-box,linear-gradient(115deg,var(--beliv-accent),var(--beliv-accent-light),var(--beliv-accent-dark)) border-box;" +
+      "  box-shadow:0 18px 44px rgba(7,29,62,0.2);" +
       "  animation:belivFramePulse 6.4s ease-in-out infinite;" +
+      "}" +
+      ".beliv-shell.beliv-mode-fullcenter .beliv-launcher.beliv-launcher-burst{" +
+      "  animation:belivFramePulse 6.4s ease-in-out infinite,belivLauncherPop .58s ease-out 1;" +
+      "}" +
+      ".beliv-shell.beliv-mode-fullcenter .beliv-launcher::before{" +
+      "  content:'';" +
+      "  position:absolute;" +
+      "  inset:1px;" +
+      "  border-radius:inherit;" +
+      "  pointer-events:none;" +
+      "  z-index:1;" +
+      "  opacity:.34;" +
+      "  background:linear-gradient(180deg,rgba(255,255,255,0.52),rgba(255,255,255,0) 58%);" +
+      "}" +
+      ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-flash{" +
+      "  position:absolute;" +
+      "  inset:2px;" +
+      "  border-radius:inherit;" +
+      "  pointer-events:none;" +
+      "  z-index:2;" +
+      "  opacity:0;" +
+      "  background:linear-gradient(100deg,rgba(255,255,255,0) 28%,var(--beliv-accent-light) 45%,var(--beliv-accent) 52%,var(--beliv-accent-dark) 59%,rgba(255,255,255,0) 76%);" +
+      "  filter:saturate(1.16) brightness(1.03);" +
+      "  transform:translateX(-44%) scaleX(.95);" +
+      "}" +
+      ".beliv-shell.beliv-mode-fullcenter .beliv-launcher.beliv-launcher-intro-flash .beliv-launcher-flash{" +
+      "  animation:belivLauncherIntroFlash 1.45s cubic-bezier(.2,.7,.26,1) 1;" +
+      "}" +
+      ".beliv-shell.beliv-mode-fullcenter .beliv-launcher.beliv-launcher-intro-flash::after{" +
+      "  animation:belivLauncherIntroBorderFlash 1.45s cubic-bezier(.2,.7,.26,1) 1;" +
+      "}" +
+      ".beliv-shell.beliv-mode-fullcenter .beliv-launcher::after{" +
+      "  content:'';" +
+      "  position:absolute;" +
+      "  inset:0;" +
+      "  border-radius:inherit;" +
+      "  pointer-events:none;" +
+      "  z-index:4;" +
+      "  box-shadow:inset 0 1px 0 rgba(255,255,255,0.8),inset 0 -1px 0 rgba(7,29,62,0.1);" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-modal{" +
       "  z-index:2147483647 !important;" +
@@ -1161,35 +1771,74 @@
       "  -webkit-backdrop-filter:blur(7px) saturate(120%);" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-input{" +
-      "  padding:22px 104px 22px 30px;" +
-      "  font-size:24px;" +
+      "  padding:18px 90px 18px 20px;" +
+      "  font-size:clamp(16px,1.2vw,22px);" +
       "  line-height:1.2;" +
       "  color:#0f2a46;" +
       "  font-weight:500;" +
+      "  letter-spacing:.01em;" +
+      "  background:transparent;" +
+      "  position:relative;" +
+      "  z-index:3;" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-input::placeholder{" +
-      "  color:#2c5f8f;" +
+      "  color:var(--beliv-accent-dark);" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-submit{" +
       "  position:absolute;" +
-      "  right:12px;" +
-      "  top:50%;" +
-      "  transform:translateY(-50%);" +
-      "  width:68px;" +
-      "  min-width:68px;" +
-      "  height:68px;" +
-      "  border-radius:20px;" +
+      "  right:5px;" +
+      "  top:calc(50% - 22.5px);" +
+      "  bottom:auto;" +
+      "  transform:none;" +
+      "  width:clamp(60px,4.8vw,74px);" +
+      "  min-width:clamp(60px,4.8vw,74px);" +
+      "  height:45px;" +
+      "  border-radius:12px;" +
       "  padding:0;" +
-      "  border:1px solid rgba(255,255,255,0.56);" +
-      "  background:radial-gradient(circle at 24% 22%,#5cb8ff 0,var(--beliv-accent) 52%,var(--beliv-accent-dark) 100%);" +
-      "  box-shadow:0 12px 26px rgba(24,119,242,0.38);" +
+      "  border:1px solid rgba(255,255,255,0.62);" +
+      "  background:radial-gradient(circle at 24% 18%,rgba(255,255,255,0.4) 0,rgba(255,255,255,0) 44%),linear-gradient(145deg,var(--beliv-accent-light),var(--beliv-accent),var(--beliv-accent-dark));" +
+      "  box-shadow:0 12px 24px rgba(6,22,47,0.32),inset 0 1px 0 rgba(255,255,255,0.45);" +
       "  animation:belivCtaPulse 4.2s ease-in-out infinite;" +
+      "  z-index:3;" +
+      "}" +
+      ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-submit.beliv-submit-burst{" +
+      "  animation:belivCtaPulse 4.2s ease-in-out infinite,belivSubmitBurst .52s ease-out 1;" +
+      "}" +
+      ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-submit.beliv-submit-burst::after{" +
+      "  content:'';" +
+      "  position:absolute;" +
+      "  inset:0;" +
+      "  border-radius:inherit;" +
+      "  pointer-events:none;" +
+      "  background:linear-gradient(122deg,rgba(255,255,255,0) 12%,rgba(129,234,255,0.56) 44%,rgba(255,255,255,0) 74%);" +
+      "  animation:belivAISweep .52s ease-out 1;" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-label{" +
       "  display:none;" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-agent{" +
-      "  display:block;" +
+      "  display:flex;" +
+      "  align-items:center;" +
+      "  justify-content:center;" +
+      "  width:18px;" +
+      "  height:18px;" +
+      "  position:relative;" +
+      "  background:transparent;" +
+      "  box-shadow:none;" +
+      "}" +
+      ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-agent i,.beliv-shell.beliv-mode-fullcenter .beliv-launcher-agent b{" +
+      "  display:none;" +
+      "}" +
+      ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-agent::before{" +
+      "  content:'';" +
+      "  position:absolute;" +
+      "  top:50%;" +
+      "  left:50%;" +
+      "  width:13px;" +
+      "  height:14px;" +
+      "  transform:translate(-50%,-50%) scale(1.33);" +
+      "  background:#ffffff;" +
+      "  clip-path:polygon(50% 0,100% 38%,72% 38%,72% 100%,28% 100%,28% 38%,0 38%);" +
       "}" +
       ".beliv-float-trigger{" +
       "  display:none;" +
@@ -1272,6 +1921,7 @@
       ".beliv-shell.beliv-right .beliv-launcher{right:20px;}" +
       ".beliv-shell.beliv-left .beliv-launcher{left:20px;}" +
       ".beliv-shell.beliv-open .beliv-launcher{opacity:0;transform:translateY(10px);pointer-events:none;}" +
+      ".beliv-shell.beliv-open.beliv-closing-launcher .beliv-launcher{opacity:0 !important;transform:translateY(10px) !important;pointer-events:none !important;}" +
       ".beliv-launcher-input{" +
       "  flex:1;" +
       "  border:0;" +
@@ -1346,28 +1996,40 @@
       ".beliv-overlay{" +
       "  position:absolute;" +
       "  inset:0;" +
-      "  background:rgba(7,15,23,0.47);" +
-      "  backdrop-filter:blur(4px);" +
-      "  -webkit-backdrop-filter:blur(4px);" +
+      "  background:rgba(6,14,26,0.45);" +
+      "  backdrop-filter:blur(6px) saturate(120%);" +
+      "  -webkit-backdrop-filter:blur(6px) saturate(120%);" +
       "}" +
       ".beliv-panel{" +
       "  position:absolute;" +
       "  bottom:86px;" +
       "  width:min(var(--beliv-popup-width),calc(100vw - 32px));" +
       "  height:min(var(--beliv-popup-height),calc(100vh - 108px));" +
-      "  border:1px solid rgba(127,166,229,0.52);" +
-      "  background:radial-gradient(130% 100% at 0% 0%,rgba(107,183,255,0.24) 0,transparent 40%),radial-gradient(120% 90% at 100% 100%,rgba(61,233,221,0.2) 0,transparent 44%),linear-gradient(180deg,#f8fbff 0%,#f4f8ff 100%);" +
-      "  border-radius:20px;" +
+      "  border:1px solid rgba(168,189,218,0.58);" +
+      "  background:linear-gradient(180deg,rgba(249,252,255,0.98) 0%,rgba(245,248,253,0.98) 100%);" +
+      "  border-radius:24px;" +
       "  overflow:hidden;" +
       "  display:flex;" +
       "  flex-direction:column;" +
-      "  box-shadow:0 30px 70px rgba(8,24,52,0.34),inset 18px 18px 46px -40px rgba(74,162,255,0.64),inset -20px -20px 42px -36px rgba(81,233,221,0.62);" +
+      "  box-shadow:0 26px 58px rgba(8,24,52,0.24);" +
       "  transform:translateY(14px) scale(.985);" +
       "  transition:transform .22s ease;" +
       "}" +
       ".beliv-modal.beliv-open .beliv-panel{transform:translateY(0) scale(1);}" +
       ".beliv-shell.beliv-right .beliv-panel{right:20px;}" +
       ".beliv-shell.beliv-left .beliv-panel{left:20px;}" +
+      ".beliv-shell.beliv-opening-launcher .beliv-panel{" +
+      "  transition:none !important;" +
+      "}" +
+      ".beliv-shell.beliv-closing-launcher .beliv-panel{" +
+      "  transition:none !important;" +
+      "}" +
+      ".beliv-shell.beliv-opening-launcher .beliv-panel.beliv-panel-opening{" +
+      "  animation:belivPanelOpenAura .52s ease-out 1;" +
+      "}" +
+      ".beliv-shell.beliv-closing-launcher .beliv-panel.beliv-panel-closing{" +
+      "  animation:belivPanelCloseAura .42s ease-in 1;" +
+      "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
       "  top:50%;" +
       "  left:50% !important;" +
@@ -1375,23 +2037,37 @@
       "  bottom:auto;" +
       "  width:min(960px,calc(100vw - 56px));" +
       "  height:min(84vh,780px);" +
-      "  border-radius:22px;" +
+      "  border-radius:26px;" +
       "  transform:translate(-50%,-46%) scale(.985);" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-modal.beliv-open .beliv-panel{" +
       "  transform:translate(-50%,-50%) scale(1);" +
       "}" +
       ".beliv-header{" +
-      "  background:linear-gradient(122deg,#1e56ff,#1d7cff,#1bb8ff,#1e56ff);" +
-      "  background-size:220% 220%;" +
+      "  background:linear-gradient(120deg,var(--beliv-accent-dark) 0,var(--beliv-accent) 100%);" +
       "  color:#fff;" +
-      "  padding:16px 16px 15px;" +
+      "  padding:16px 18px 14px;" +
       "  display:flex;" +
       "  align-items:flex-start;" +
       "  justify-content:space-between;" +
       "  gap:14px;" +
       "  box-shadow:inset 0 -1px 0 rgba(255,255,255,0.2);" +
-      "  animation:belivAurora 8.4s ease-in-out infinite;" +
+      "  position:relative;" +
+      "  overflow:hidden;" +
+      "  animation:none;" +
+      "}" +
+      ".beliv-header::before{" +
+      "  content:none;" +
+      "  position:absolute;" +
+      "  inset:-40% -18% auto;" +
+      "  height:120%;" +
+      "  background:radial-gradient(ellipse at center,rgba(255,255,255,0.3) 0,rgba(255,255,255,0) 62%);" +
+      "  pointer-events:none;" +
+      "  opacity:.7;" +
+      "}" +
+      ".beliv-header > *{" +
+      "  position:relative;" +
+      "  z-index:1;" +
       "}" +
       ".beliv-heading{" +
       "  min-width:0;" +
@@ -1405,19 +2081,21 @@
       "  min-width:0;" +
       "}" +
       ".beliv-site-favicon{" +
-      "  width:26px;" +
-      "  height:26px;" +
-      "  border-radius:7px;" +
-      "  flex:0 0 26px;" +
+      "  width:24px;" +
+      "  height:24px;" +
+      "  border-radius:8px;" +
+      "  flex:0 0 24px;" +
       "  object-fit:cover;" +
-      "  border:1px solid rgba(255,255,255,0.54);" +
-      "  background:rgba(255,255,255,0.22);" +
-      "  box-shadow:0 5px 14px rgba(6,16,38,0.22);" +
+      "  border:1px solid rgba(255,255,255,0.58);" +
+      "  background:rgba(255,255,255,0.26);" +
+      "  box-shadow:none;" +
       "}" +
       ".beliv-title{" +
-      "  margin:0 0 4px 0;" +
+      "  margin:0 0 3px 0;" +
       "  font-size:18px;" +
       "  line-height:1.2;" +
+      "  font-weight:700;" +
+      "  letter-spacing:.01em;" +
       "  overflow-wrap:anywhere;" +
       "}" +
       ".beliv-subtitle{" +
@@ -1425,27 +2103,37 @@
       "  font-size:13px;" +
       "  line-height:1.35;" +
       "  overflow-wrap:anywhere;" +
-      "  opacity:.94;" +
+      "  opacity:.92;" +
       "}" +
       ".beliv-close{" +
-      "  border:0;" +
-      "  background:rgba(255,255,255,0.24);" +
-      "  color:#fff;" +
-      "  width:34px;" +
-      "  height:34px;" +
-      "  border-radius:12px;" +
+      "  border:1px solid rgba(255,255,255,0.88);" +
+      "  background:#ffffff;" +
+      "  color:var(--beliv-accent-dark);" +
+      "  width:25px;" +
+      "  height:25px;" +
+      "  border-radius:999px;" +
       "  cursor:pointer;" +
-      "  font-size:22px;" +
+      "  font-size:15px;" +
       "  line-height:1;" +
+      "  font-weight:700;" +
       "  flex:0 0 auto;" +
-      "  box-shadow:0 6px 16px rgba(8,18,48,0.22);" +
+      "  display:inline-flex;" +
+      "  align-items:center;" +
+      "  justify-content:center;" +
+      "  box-shadow:none;" +
+      "  transition:transform .16s ease,background .16s ease;" +
+      "}" +
+      ".beliv-close:hover{" +
+      "  transform:translateY(-1px);" +
+      "  background:#f4f8ff;" +
+      "  box-shadow:none;" +
       "}" +
       ".beliv-messages{" +
       "  flex:1;" +
       "  overflow:auto;" +
       "  overflow-x:hidden;" +
       "  padding:16px;" +
-      "  background:radial-gradient(circle at 100% 0,#eaf3ff 0,#f5f8ff 50%,#f7faff 100%);" +
+      "  background:#f3f7fc;" +
       "}" +
       ".beliv-row{" +
       "  display:flex;" +
@@ -1458,26 +2146,29 @@
       ".beliv-bubble{" +
       "  max-width:84%;" +
       "  min-width:0;" +
-      "  border-radius:18px;" +
-      "  padding:11px 13px;" +
+      "  border-radius:14px;" +
+      "  padding:10px 12px;" +
       "  font-size:14px;" +
-      "  line-height:1.5;" +
+      "  line-height:1.52;" +
       "  white-space:pre-wrap;" +
       "  word-break:break-word;" +
       "  overflow-wrap:anywhere;" +
       "}" +
       ".beliv-row-user .beliv-bubble{" +
-      "  background:linear-gradient(145deg,var(--beliv-accent),var(--beliv-accent-dark));" +
+      "  background:linear-gradient(160deg,var(--beliv-accent) 0,var(--beliv-accent-dark) 100%);" +
       "  color:#fff;" +
       "  margin-left:auto;" +
-      "  border-bottom-right-radius:8px;" +
+      "  border:0;" +
+      "  box-shadow:none;" +
+      "  border-bottom-right-radius:9px;" +
       "}" +
       ".beliv-row-assistant .beliv-bubble{" +
       "  background:#ffffff;" +
       "  color:#1a2a3d;" +
-      "  border:1px solid #d7e2f0;" +
+      "  border:1px solid #d9e4f2;" +
+      "  box-shadow:0 5px 12px rgba(36,67,106,0.12);" +
       "  margin-right:auto;" +
-      "  border-bottom-left-radius:8px;" +
+      "  border-bottom-left-radius:9px;" +
       "}" +
       ".beliv-row-disclaimer{" +
       "  justify-content:flex-start;" +
@@ -1489,9 +2180,9 @@
       "  display:flex;" +
       "  align-items:flex-start;" +
       "  gap:10px;" +
-      "  background:#fff5e8;" +
-      "  color:#665127;" +
-      "  border:1px solid #efd2a5;" +
+      "  background:#fff9ef;" +
+      "  color:#7b6b4a;" +
+      "  border:1px solid #f1dfbf;" +
       "  border-radius:15px;" +
       "  padding:11px 12px;" +
       "}" +
@@ -1500,8 +2191,8 @@
       "  height:22px;" +
       "  flex:0 0 22px;" +
       "  border-radius:7px;" +
-      "  background:#cfaa65;" +
-      "  color:#ffffff;" +
+      "  background:#ead7b1;" +
+      "  color:#8a6d35;" +
       "  font-size:14px;" +
       "  font-weight:800;" +
       "  text-align:center;" +
@@ -1511,44 +2202,95 @@
       ".beliv-disclaimer-text{" +
       "  flex:1;" +
       "  min-width:0;" +
+      "  font-size:13px;" +
+      "  line-height:1.4;" +
       "}" +
       ".beliv-chat-form{" +
       "  display:flex;" +
       "  gap:8px;" +
       "  padding:12px;" +
-      "  border-top:1px solid #dee8f5;" +
-      "  background:#ffffff;" +
+      "  border-top:1px solid #d8e6f7;" +
+      "  background:#f8fbff;" +
+      "  position:relative;" +
+      "  overflow:hidden;" +
+      "}" +
+      ".beliv-chat-form::before{" +
+      "  content:'';" +
+      "  position:absolute;" +
+      "  inset:2px;" +
+      "  border-radius:12px;" +
+      "  pointer-events:none;" +
+      "  opacity:0;" +
+      "  z-index:0;" +
+      "  background:linear-gradient(100deg,rgba(255,255,255,0) 28%,var(--beliv-accent-light) 45%,var(--beliv-accent) 52%,var(--beliv-accent-dark) 59%,rgba(255,255,255,0) 76%);" +
+      "  transform:translateX(-52%) scaleX(.96);" +
+      "}" +
+      ".beliv-chat-form > *{" +
+      "  position:relative;" +
+      "  z-index:1;" +
+      "}" +
+      ".beliv-chat-form.beliv-chat-open-flash::before{" +
+      "  animation:belivChatOpenFlash 1.25s cubic-bezier(.2,.72,.25,1) 1;" +
+      "}" +
+      ".beliv-chat-input.beliv-chat-input-open-flash{" +
+      "  animation:belivChatInputGlow 1.25s ease-out 1;" +
       "}" +
       ".beliv-chat-input{" +
       "  flex:1;" +
       "  min-width:0;" +
-      "  border:1px solid #d2deeb;" +
+      "  border:1px solid #d0ddee;" +
       "  outline:none;" +
       "  border-radius:14px;" +
-      "  padding:11px 13px;" +
+      "  padding:12px 14px;" +
+      "  background:#ffffff;" +
+      "  box-shadow:none;" +
       "  color:var(--beliv-text);" +
       "  font-size:14px;" +
       "}" +
       ".beliv-chat-input:focus,.beliv-launcher-input:focus{" +
-      "  box-shadow:inset 0 0 0 1px var(--beliv-accent);" +
+      "  box-shadow:0 0 0 2px rgba(24,119,242,0.16),inset 0 0 0 1px var(--beliv-accent);" +
       "}" +
       ".beliv-chat-submit{" +
       "  border:0;" +
       "  border-radius:14px;" +
-      "  padding:0 16px;" +
-      "  min-width:72px;" +
+      "  padding:0;" +
+      "  width:56px;" +
+      "  min-width:56px;" +
       "  color:#fff;" +
       "  font-weight:700;" +
-      "  background:linear-gradient(145deg,var(--beliv-accent),var(--beliv-accent-dark));" +
+      "  background:radial-gradient(circle at 20% 18%,rgba(255,255,255,0.35) 0,rgba(255,255,255,0) 40%),linear-gradient(145deg,var(--beliv-accent-light),var(--beliv-accent),var(--beliv-accent-dark));" +
       "  cursor:pointer;" +
+      "  display:flex;" +
+      "  align-items:center;" +
+      "  justify-content:center;" +
+      "  box-shadow:none;" +
+      "  transition:transform .16s ease;" +
+      "}" +
+      ".beliv-chat-submit:not(:disabled):hover{" +
+      "  transform:translateY(-1px);" +
+      "  box-shadow:none;" +
+      "}" +
+      ".beliv-chat-submit-icon{" +
+      "  width:19px;" +
+      "  height:17px;" +
+      "  position:relative;" +
+      "  display:block;" +
+      "}" +
+      ".beliv-chat-submit-icon::before{" +
+      "  content:'';" +
+      "  position:absolute;" +
+      "  inset:0;" +
+      "  background:#ffffff;" +
+      "  clip-path:polygon(50% 0,88% 38%,66% 38%,66% 100%,34% 100%,34% 38%,12% 38%);" +
       "}" +
       ".beliv-brand{" +
       "  margin:0;" +
-      "  border-top:1px solid #deebf1;" +
-      "  background:#f9fcff;" +
+      "  border-top:1px solid #d9e7f6;" +
+      "  background:#f5f9fe;" +
       "  padding:8px 12px;" +
-      "  color:#698195;" +
+      "  color:#7e93a9;" +
       "  font-size:11px;" +
+      "  letter-spacing:.02em;" +
       "  text-align:center;" +
       "}" +
       ".beliv-dots{" +
@@ -1566,6 +2308,21 @@
       "}" +
       ".beliv-dots i:nth-child(2){animation-delay:.15s;}" +
       ".beliv-dots i:nth-child(3){animation-delay:.3s;}" +
+      ".beliv-wait-dots{" +
+      "  display:inline-flex;" +
+      "  align-items:center;" +
+      "  gap:4px;" +
+      "}" +
+      ".beliv-wait-dots i{" +
+      "  width:6px;" +
+      "  height:6px;" +
+      "  border-radius:50%;" +
+      "  display:block;" +
+      "  background:rgba(255,255,255,0.96);" +
+      "  animation:belivPulse 1.1s infinite ease-in-out;" +
+      "}" +
+      ".beliv-wait-dots i:nth-child(2){animation-delay:.15s;}" +
+      ".beliv-wait-dots i:nth-child(3){animation-delay:.3s;}" +
       ".beliv-shell.beliv-theme-dark .beliv-launcher{" +
       "  background:#0f1723;" +
       "  border-color:#2f415a;" +
@@ -1573,13 +2330,17 @@
       "}" +
       ".beliv-shell.beliv-theme-dark.beliv-mode-fullcenter .beliv-launcher{" +
       "  border-color:transparent;" +
-      "  background:linear-gradient(180deg,rgba(8,18,34,0.94),rgba(9,24,42,0.94)) padding-box,linear-gradient(130deg,rgba(70,147,255,0.9),rgba(64,95,255,0.86),rgba(69,225,215,0.82)) border-box;" +
-      "  box-shadow:0 22px 48px rgba(0,0,0,0.55),0 0 34px rgba(58,135,255,0.3);" +
+      "  background:linear-gradient(180deg,rgba(8,18,34,0.94),rgba(9,24,42,0.94)) padding-box,linear-gradient(130deg,var(--beliv-accent-light),var(--beliv-accent),var(--beliv-accent-dark)) border-box;" +
+      "  box-shadow:0 22px 48px rgba(0,0,0,0.55);" +
+      "}" +
+      ".beliv-shell.beliv-theme-dark.beliv-mode-fullcenter .beliv-launcher-flash{" +
+      "  background:linear-gradient(100deg,rgba(255,255,255,0) 28%,var(--beliv-accent-light) 45%,var(--beliv-accent) 52%,var(--beliv-accent-dark) 59%,rgba(255,255,255,0) 76%);" +
+      "  filter:saturate(1.24) brightness(1.06);" +
       "}" +
       ".beliv-shell.beliv-theme-dark.beliv-mode-fullcenter .beliv-launcher-submit{" +
-      "  border-color:rgba(255,255,255,0.4);" +
-      "  background:radial-gradient(circle at 24% 22%,#59a9ff 0,#2b81ff 52%,#1d5ec7 100%);" +
-      "  box-shadow:0 12px 26px rgba(18,84,183,0.5);" +
+      "  border-color:rgba(255,255,255,0.46);" +
+      "  background:radial-gradient(circle at 24% 18%,rgba(255,255,255,0.3) 0,rgba(255,255,255,0) 42%),linear-gradient(145deg,var(--beliv-accent-light),var(--beliv-accent),var(--beliv-accent-dark));" +
+      "  box-shadow:0 12px 24px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.34);" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-launcher-input{" +
       "  color:#e5edf6;" +
@@ -1595,23 +2356,24 @@
       "  color:#9dc1e4;" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-overlay{" +
-      "  background:rgba(0,0,0,0.62);" +
+      "  background:rgba(0,0,0,0.66);" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-panel{" +
-      "  border-color:#2b4e7b;" +
-      "  background:radial-gradient(130% 100% at 0% 0%,rgba(57,138,232,0.24) 0,transparent 40%),radial-gradient(120% 90% at 100% 100%,rgba(54,192,188,0.18) 0,transparent 44%),linear-gradient(180deg,#0f1729 0,#0b1222 100%);" +
-      "  box-shadow:0 32px 72px rgba(0,0,0,0.58),inset 20px 20px 46px -40px rgba(50,120,218,0.54),inset -22px -20px 42px -36px rgba(43,176,170,0.45);" +
+      "  border-color:rgba(74,110,158,0.76);" +
+      "  background:linear-gradient(180deg,rgba(13,22,37,0.98) 0,rgba(10,17,29,0.98) 100%);" +
+      "  box-shadow:0 26px 58px rgba(0,0,0,0.58);" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-messages{" +
-      "  background:radial-gradient(circle at 100% 0,#1a2f46 0,#101d2f 52%,#0b1624 100%);" +
+      "  background:#0f1929;" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-row-assistant .beliv-bubble{" +
-      "  background:#162334;" +
+      "  background:#152338;" +
       "  color:#e5edf6;" +
-      "  border-color:#2b3d52;" +
+      "  border-color:#30465f;" +
+      "  box-shadow:0 6px 14px rgba(0,0,0,0.34);" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-row-disclaimer .beliv-bubble{" +
-      "  background:#3b2f1a;" +
+      "  background:#3c311c;" +
       "  color:#f3dfba;" +
       "  border-color:#8e7346;" +
       "}" +
@@ -1620,18 +2382,32 @@
       "  color:#1d1200;" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-chat-form{" +
-      "  background:#0f1723;" +
-      "  border-top-color:#2e3c4f;" +
+      "  background:#0d1625;" +
+      "  border-top-color:#344a63;" +
+      "}" +
+      ".beliv-shell.beliv-theme-dark .beliv-chat-form::before{" +
+      "  background:linear-gradient(100deg,rgba(255,255,255,0) 28%,var(--beliv-accent-light) 44%,var(--beliv-accent) 52%,var(--beliv-accent-dark) 60%,rgba(255,255,255,0) 76%);" +
+      "  opacity:0;" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-chat-input{" +
-      "  background:#162334;" +
+      "  background:#142236;" +
       "  color:#e5edf6;" +
-      "  border-color:#2e3c4f;" +
+      "  border-color:#334a63;" +
+      "  box-shadow:none;" +
+      "}" +
+      ".beliv-shell.beliv-theme-dark .beliv-chat-submit{" +
+      "  box-shadow:none;" +
+      "}" +
+      ".beliv-shell.beliv-theme-dark .beliv-close{" +
+      "  background:#ffffff;" +
+      "  color:var(--beliv-accent-light);" +
+      "  border-color:rgba(255,255,255,0.86);" +
+      "  box-shadow:none;" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-brand{" +
-      "  background:#0c1420;" +
-      "  border-top-color:#2e3c4f;" +
-      "  color:#97adbf;" +
+      "  background:#0d1827;" +
+      "  border-top-color:#33495f;" +
+      "  color:#9bb1c6;" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-dots i{" +
       "  background:#9eb3c6;" +
@@ -1642,12 +2418,63 @@
       "  100%{background-position:0% 50%;}" +
       "}" +
       "@keyframes belivFramePulse{" +
-      "  0%,100%{box-shadow:0 20px 48px rgba(7,29,62,0.2),0 0 28px rgba(61,139,255,0.2);}" +
-      "  50%{box-shadow:0 22px 54px rgba(7,29,62,0.24),0 0 40px rgba(61,139,255,0.32);}" +
+      "  0%,100%{box-shadow:0 18px 44px rgba(7,29,62,0.2);}" +
+      "  50%{box-shadow:0 22px 52px rgba(7,29,62,0.24);}" +
       "}" +
       "@keyframes belivCtaPulse{" +
-      "  0%,100%{box-shadow:0 12px 26px rgba(24,119,242,0.34);}" +
-      "  50%{box-shadow:0 16px 30px rgba(24,119,242,0.48);}" +
+      "  0%,100%{box-shadow:0 12px 24px rgba(6,22,47,0.3),inset 0 1px 0 rgba(255,255,255,0.4);}" +
+      "  50%{box-shadow:0 16px 30px rgba(6,22,47,0.4),inset 0 1px 0 rgba(255,255,255,0.5);}" +
+      "}" +
+      "@keyframes belivLauncherPop{" +
+      "  0%{transform:translateY(0) scale(1);filter:saturate(1);}" +
+      "  35%{transform:translateY(-1px) scale(1.015);filter:saturate(1.22);}" +
+      "  100%{transform:translateY(0) scale(1);filter:saturate(1);}" +
+      "}" +
+      "@keyframes belivSubmitBurst{" +
+      "  0%{transform:scale(1);}" +
+      "  46%{transform:scale(1.08);}" +
+      "  100%{transform:scale(1);}" +
+      "}" +
+      "@keyframes belivLauncherIntroFlash{" +
+      "  0%{opacity:0;transform:translateX(-44%) scaleX(.95);}" +
+      "  14%{opacity:.74;transform:translateX(-26%) scaleX(1);}" +
+      "  48%{opacity:.62;transform:translateX(36%) scaleX(1.04);}" +
+      "  78%{opacity:.42;transform:translateX(-18%) scaleX(.99);}" +
+      "  100%{opacity:0;transform:translateX(-46%) scaleX(.95);}" +
+      "}" +
+      "@keyframes belivLauncherIntroBorderFlash{" +
+      "  0%{box-shadow:inset 0 1px 0 rgba(255,255,255,0.8),inset 0 -1px 0 rgba(7,29,62,0.1);}" +
+      "  24%{box-shadow:inset 0 1px 0 rgba(255,255,255,0.84),inset 0 -1px 0 rgba(7,29,62,0.12),0 0 14px -9px var(--beliv-accent);}" +
+      "  56%{box-shadow:inset 0 1px 0 rgba(255,255,255,0.86),inset 0 -1px 0 rgba(7,29,62,0.12),0 0 18px -8px var(--beliv-accent-dark);}" +
+      "  84%{box-shadow:inset 0 1px 0 rgba(255,255,255,0.84),inset 0 -1px 0 rgba(7,29,62,0.12),0 0 12px -10px var(--beliv-accent);}" +
+      "  100%{box-shadow:inset 0 1px 0 rgba(255,255,255,0.8),inset 0 -1px 0 rgba(7,29,62,0.1);}" +
+      "}" +
+      "@keyframes belivChatOpenFlash{" +
+      "  0%{opacity:0;transform:translateX(-52%) scaleX(.96);}" +
+      "  16%{opacity:.34;}" +
+      "  50%{opacity:.26;transform:translateX(36%) scaleX(1.02);}" +
+      "  78%{opacity:.16;transform:translateX(-18%) scaleX(.99);}" +
+      "  100%{opacity:0;transform:translateX(-54%) scaleX(.96);}" +
+      "}" +
+      "@keyframes belivChatInputGlow{" +
+      "  0%{box-shadow:none;}" +
+      "  26%{box-shadow:inset 0 0 0 1px var(--beliv-accent-light);}" +
+      "  62%{box-shadow:inset 0 0 0 1px var(--beliv-accent);}" +
+      "  100%{box-shadow:none;}" +
+      "}" +
+      "@keyframes belivAISweep{" +
+      "  0%{transform:translateX(-120%);opacity:0;}" +
+      "  35%{opacity:.85;}" +
+      "  100%{transform:translateX(120%);opacity:0;}" +
+      "}" +
+      "@keyframes belivPanelOpenAura{" +
+      "  0%{box-shadow:0 34px 76px rgba(11,33,76,0.38),0 0 0 rgba(99,201,255,0);filter:saturate(1.08) brightness(1.03);}" +
+      "  50%{box-shadow:0 38px 82px rgba(11,33,76,0.42),0 0 34px rgba(88,205,255,0.22);filter:saturate(1.18) brightness(1.06);}" +
+      "  100%{box-shadow:0 30px 70px rgba(8,24,52,0.34),inset 18px 18px 46px -40px rgba(74,162,255,0.64),inset -20px -20px 42px -36px rgba(81,233,221,0.62);filter:saturate(1) brightness(1);}" +
+      "}" +
+      "@keyframes belivPanelCloseAura{" +
+      "  0%{filter:saturate(1.12) brightness(1.04);}" +
+      "  100%{filter:saturate(.98) brightness(.98);}" +
       "}" +
       "@keyframes belivPulse{" +
       "  0%,80%,100%{transform:scale(.65);opacity:.44;}" +
@@ -1679,16 +2506,30 @@
       "  }" +
       "}" +
       "@media (max-width:820px){" +
+      "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher{" +
+      "    min-height:64px;" +
+      "    border-radius:12px;" +
+      "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-input{" +
-      "    font-size:20px;" +
-      "    padding:18px 86px 18px 18px;" +
+      "    font-size:16px;" +
+      "    padding:17px 82px 17px 16px;" +
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-submit{" +
-      "    width:58px;" +
-      "    min-width:58px;" +
-      "    height:58px;" +
-      "    border-radius:16px;" +
-      "    right:9px;" +
+      "    width:62px;" +
+      "    min-width:62px;" +
+      "    border-radius:11px;" +
+      "    right:5px;" +
+      "    top:calc(50% - 22.5px);" +
+      "    bottom:auto;" +
+      "    height:45px;" +
+      "  }" +
+      "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-agent{" +
+      "    width:16px;" +
+      "    height:16px;" +
+      "  }" +
+      "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-agent::before{" +
+      "    width:12px;" +
+      "    height:13px;" +
       "  }" +
       "  .beliv-panel{" +
       "    border-radius:18px;" +
@@ -1717,23 +2558,34 @@
       "    border-radius:14px;" +
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher{" +
-      "    border-radius:18px;" +
+      "    min-height:60px;" +
+      "    border-radius:10px;" +
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-input{" +
-      "    font-size:18px;" +
-      "    padding:16px 74px 16px 16px;" +
+      "    font-size:15px;" +
+      "    padding:16px 72px 16px 14px;" +
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-submit{" +
-      "    width:54px;" +
-      "    min-width:54px;" +
-      "    height:54px;" +
-      "    right:8px;" +
-      "    border-radius:16px;" +
+      "    top:calc(50% - 22.5px);" +
+      "    bottom:auto;" +
+      "    width:56px;" +
+      "    min-width:56px;" +
+      "    height:45px;" +
+      "    right:3px;" +
+      "    border-radius:9px;" +
+      "  }" +
+      "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-agent{" +
+      "    width:14px;" +
+      "    height:14px;" +
+      "  }" +
+      "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-agent::before{" +
+      "    width:11px;" +
+      "    height:12px;" +
       "  }" +
       "  .beliv-panel{" +
       "    left:max(6px,env(safe-area-inset-left)) !important;" +
       "    right:max(6px,env(safe-area-inset-right)) !important;" +
-      "    top:max(6px,env(safe-area-inset-top));" +
+      "    top:max(24px,calc(env(safe-area-inset-top) + 8px));" +
       "    bottom:max(6px,env(safe-area-inset-bottom));" +
       "    width:auto;" +
       "    height:auto;" +
@@ -1747,7 +2599,7 @@
       "  .beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
       "    left:max(6px,env(safe-area-inset-left)) !important;" +
       "    right:max(6px,env(safe-area-inset-right)) !important;" +
-      "    top:max(6px,env(safe-area-inset-top));" +
+      "    top:max(24px,calc(env(safe-area-inset-top) + 8px));" +
       "    bottom:max(6px,env(safe-area-inset-bottom));" +
       "    width:auto;" +
       "    height:auto;" +
@@ -1776,8 +2628,8 @@
       "    font-size:13px;" +
       "  }" +
       "  .beliv-close{" +
-      "    width:36px;" +
-      "    height:36px;" +
+      "    width:25px;" +
+      "    height:25px;" +
       "  }" +
       "  .beliv-messages{" +
       "    padding:12px;" +
@@ -1794,8 +2646,9 @@
       "    padding:12px 13px;" +
       "  }" +
       "  .beliv-chat-submit{" +
-      "    min-width:68px;" +
-      "    padding:0 13px;" +
+      "    width:60px;" +
+      "    min-width:60px;" +
+      "    padding:0;" +
       "  }" +
       "  .beliv-brand{" +
       "    padding:8px max(12px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));" +
@@ -1831,10 +2684,10 @@
       "    line-height:1.32;" +
       "  }" +
       "  .beliv-close{" +
-      "    width:32px;" +
-      "    height:32px;" +
-      "    border-radius:10px;" +
-      "    font-size:20px;" +
+      "    width:22px;" +
+      "    height:22px;" +
+      "    border-radius:999px;" +
+      "    font-size:14px;" +
       "  }" +
       "  .beliv-messages{" +
       "    padding:12px;" +
@@ -1847,8 +2700,46 @@
       "    padding:11px 11px;" +
       "  }" +
       "  .beliv-chat-submit{" +
-      "    min-width:64px;" +
-      "    padding:0 11px;" +
+      "    width:56px;" +
+      "    min-width:56px;" +
+      "    padding:0;" +
+      "  }" +
+      "}" +
+      "@media (max-width:360px){" +
+      "  .beliv-panel{" +
+      "    left:max(4px,env(safe-area-inset-left)) !important;" +
+      "    right:max(4px,env(safe-area-inset-right)) !important;" +
+      "    top:max(24px,calc(env(safe-area-inset-top) + 8px));" +
+      "    bottom:max(4px,env(safe-area-inset-bottom));" +
+      "    border-radius:16px;" +
+      "  }" +
+      "  .beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
+      "    left:max(4px,env(safe-area-inset-left)) !important;" +
+      "    right:max(4px,env(safe-area-inset-right)) !important;" +
+      "    top:max(24px,calc(env(safe-area-inset-top) + 8px));" +
+      "    bottom:max(4px,env(safe-area-inset-bottom));" +
+      "    border-radius:16px;" +
+      "  }" +
+      "  .beliv-chat-form{" +
+      "    gap:5px;" +
+      "    padding:8px 8px calc(8px + env(safe-area-inset-bottom));" +
+      "  }" +
+      "  .beliv-chat-input{" +
+      "    font-size:15px;" +
+      "    padding:10px 10px;" +
+      "  }" +
+      "  .beliv-chat-submit{" +
+      "    width:52px;" +
+      "    min-width:52px;" +
+      "    border-radius:12px;" +
+      "  }" +
+      "  .beliv-chat-submit-icon{" +
+      "    width:16px;" +
+      "    height:15px;" +
+      "  }" +
+      "  .beliv-brand{" +
+      "    font-size:10px;" +
+      "    padding:7px max(8px,env(safe-area-inset-right)) calc(7px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));" +
       "  }" +
       "}"
     );

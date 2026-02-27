@@ -378,6 +378,10 @@
               <input id="cfgDomain" type="text" value="demo.beliv.io" />
             </div>
             <div class="field">
+              <label for="cfgMainColor">Main Color</label>
+              <input id="cfgMainColor" type="color" value="#1877f2" />
+            </div>
+            <div class="field">
               <label for="cfgTheme">Theme</label>
               <select id="cfgTheme">
                 <option value="light" selected>light</option>
@@ -445,6 +449,7 @@
         subtitle: "Instant answers from your website knowledge base.",
         siteName: "Beliv Demo Docs",
         domain: "demo.beliv.io",
+        mainColor: "#1877f2",
         theme: "light",
         mode: "fullcenter",
         position: "bottom-right",
@@ -491,8 +496,9 @@
             brandLabel: readValue("cfgBrandLabel"),
             siteName: readValue("cfgSiteName"),
             domain: readValue("cfgDomain"),
+            mainColor: readValue("cfgMainColor"),
             theme: readValue("cfgTheme") || "light",
-            mode: readValue("cfgMode") || "compact",
+            mode: readValue("cfgMode") || "fullcenter",
             position: readValue("cfgPosition") || "bottom-right",
             hostSelector: readValue("cfgHostSelector"),
             hostPlacement: readValue("cfgHostPlacement") || "append",
@@ -506,6 +512,7 @@
             subtitle: config.subtitle,
             siteName: config.siteName,
             domain: config.domain,
+            mainColor: config.mainColor,
             theme: config.theme,
             mode: config.mode,
             position: config.position,
@@ -532,6 +539,7 @@
 
         function applyShowcaseConfig() {
           var config = readConfigFromForm();
+          document.documentElement.style.setProperty("--accent", config.mainColor || "#1877f2");
 
           Object.assign(window.BelivAIAgentConfig, config);
 
@@ -541,6 +549,7 @@
               subtitle: config.subtitle,
               siteName: config.siteName,
               domain: config.domain,
+              mainColor: config.mainColor,
               theme: config.theme,
               mode: config.mode,
               position: config.position,
