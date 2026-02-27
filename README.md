@@ -1,4 +1,4 @@
-# Beliv AI Agent Popup Widget
+# Beliv.io website agent Widget
 
 Embeddable JavaScript widget that adds:
 - a docked input bar (`text field + right-side button`) on the host site

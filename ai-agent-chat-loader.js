@@ -11,7 +11,7 @@
   var SESSION_STORAGE_KEY = "beliv_ai_agent_session_id";
   var MAX_INPUT_LENGTH = 200;
   var DEFAULT_CONFIG = {
-    title: "Beliv AI Agent",
+    title: "Beliv.io website agent Widget",
     subtitle: "Ask anything about this website.",
     siteName: "this website",
     domain: "",
