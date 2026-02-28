@@ -873,8 +873,7 @@
       ChatInput: prompt,
       CurrentURL: config.currentUrl,
       SessionID: state.sessionId,
-      domain: config.domain,
-      history: state.messages.slice()
+      domain: config.domain
     };
 
     var response = await fetchWithTimeout(config.endpoint, {

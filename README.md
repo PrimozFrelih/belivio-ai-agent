@@ -189,4 +189,3 @@ Each message sends JSON with only these fields:
 - `CurrentURL` (always from the actual page URL at submit time)
 - `SessionID`
 - `domain`
-- `history` (chat history array with `role` and `content`)
