@@ -120,6 +120,7 @@ Behavior:
   - `index.html` (same content as `demo-host.html`)
 - After successful `main` deploy, workflow also uploads `dist/` to SFTP path from `FTP_REMOTE_PATH` (default `/web/web-ai-agent`, common chroot mapping).
 - You can also run the deploy manually from GitHub Actions using `workflow_dispatch`.
+- If a rerun call fails due transient API connectivity, any new `main` push touching tracked paths triggers deploy again.
 
 This gives you one always-current deployment package without creating a new version tag each time.
 
