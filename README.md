@@ -9,7 +9,7 @@ Embeddable JavaScript widget that adds:
 ## Embed
 
 ```html
-<script src="https://widget.beliv.io/ai-agent-chat-loader.js"></script>
+<script src="https://widget.beliv.io/web-ai-agent/ai-agent-chat-loader.js"></script>
 ```
 
 Optional config before the script:
@@ -33,7 +33,7 @@ Optional config before the script:
     endpoint: "https://app.beliv.io/webhook/ai-agent"
   };
 </script>
-<script src="https://widget.beliv.io/ai-agent-chat-loader.js"></script>
+<script src="https://widget.beliv.io/web-ai-agent/ai-agent-chat-loader.js"></script>
 ```
 
 ## Runtime context fields
