@@ -27,6 +27,7 @@ jobs:
           cp ai-agent-chat-loader.js dist/ai-agent-chat-loader.js
           cp demo-host.html dist/demo-host.html
           cp demo-host.html dist/index.html
+          ls -la dist
 
       - name: Publish rolling deployment release
         env:
@@ -54,5 +55,5 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           localDir: "./dist"
-          remoteDir: ${{ secrets.FTP_REMOTE_PATH }}
+          remoteDir: "/root/web/web-ai-agent"
           forceUpload: true

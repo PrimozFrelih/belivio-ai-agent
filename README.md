@@ -118,7 +118,7 @@ Behavior:
   - `ai-agent-chat-loader.js`
   - `demo-host.html`
   - `index.html` (same content as `demo-host.html`)
-- After successful `main` deploy, workflow also uploads `dist/` to the SFTP path from `FTP_REMOTE_PATH`.
+- After successful `main` deploy, workflow also uploads `dist/` to `/root/web/web-ai-agent`.
 - You can also run the deploy manually from GitHub Actions using `workflow_dispatch`.
 - If a rerun call fails due transient API connectivity, any new `main` push touching tracked paths triggers deploy again.
 
@@ -129,7 +129,6 @@ Required repository secrets for SFTP deploy:
 - `FTP_USERNAME`
 - `FTP_PASSWORD`
 - `FTP_PORT` (optional, defaults to `22`)
-- `FTP_REMOTE_PATH` (required, e.g. `/root/web/web-ai-agent` or `/web/web-ai-agent` depending on SFTP user permissions)
 
 ## Versioned releases
 
