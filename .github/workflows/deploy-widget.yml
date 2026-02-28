@@ -54,5 +54,5 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           localDir: "./dist"
-          remoteDir: ${{ secrets.FTP_REMOTE_PATH || 'web/web-ai-agent' }}
+          remoteDir: ${{ secrets.FTP_REMOTE_PATH || '/web/web-ai-agent' }}
           forceUpload: true
