@@ -117,8 +117,15 @@ Behavior:
 - Uploaded deploy assets:
   - `ai-agent-chat-loader.js`
   - `demo-host.html`
+  - `index.html` (same content as `demo-host.html`)
+- After successful `main` deploy, workflow also uploads `dist/` to FTP path `/root/web/web-ai-agent/`.
 
 This gives you one always-current deployment package without creating a new version tag each time.
+
+Required repository secrets for FTP deploy:
+- `FTP_SERVER`
+- `FTP_USERNAME`
+- `FTP_PASSWORD`
 
 ## Versioned releases
 

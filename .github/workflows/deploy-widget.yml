@@ -26,6 +26,7 @@ jobs:
           mkdir -p dist
           cp ai-agent-chat-loader.js dist/ai-agent-chat-loader.js
           cp demo-host.html dist/demo-host.html
+          cp demo-host.html dist/index.html
 
       - name: Publish rolling deployment release
         env:
@@ -43,3 +44,15 @@ jobs:
               --notes "${notes}" \
               --prerelease
           fi
+
+      - name: Deploy to FTP
+        if: success() && github.ref == 'refs/heads/main'
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftp
+          server-dir: /root/web/web-ai-agent/
+          local-dir: ./dist/
+          dangerous-clean-slate: false
