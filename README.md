@@ -55,7 +55,7 @@ The widget reads these at prompt submit time, so you can expose them as page inp
 - `welcomeMessage`
 - `disclaimer`
 - `brandLabel`
-- `currentUrl`
+- `currentUrl` (optional; defaults to the actual runtime URL)
 
 `mode="fullcenter"` renders a wide launcher inside `hostSelector`; on submit it opens a large centered popup chat with backdrop blur.
 `mode="popupfloat"` shows a floating agent icon button that opens the popup chat.
@@ -161,7 +161,7 @@ git push origin v1.0.0
 - `hostSelector` (id, class, or tag selector)
 - `hostPlacement` (`append` or `prepend`)
 - `placeholder` (launcher input placeholder; preferred)
-- `currentUrl`
+- `currentUrl` (optional; defaults to the actual runtime URL)
 - `launcherPlaceholder` (legacy alias of `placeholder`)
 - `popupPlaceholder`
 - `launcherButtonLabel`

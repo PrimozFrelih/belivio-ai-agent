@@ -536,10 +536,14 @@
             brandLabel: config.brandLabel,
             endpoint: window.BelivAIAgentConfig.endpoint
           };
+          var snippetConfigSerialized = JSON.stringify(snippetConfig, null, 2).replace(
+            /"currentUrl":\s*"[^"]*"/,
+            '"currentUrl": window.location.href'
+          );
 
           return [
             "<script>",
-            "window.BelivAIAgentConfig = " + JSON.stringify(snippetConfig, null, 2) + ";",
+            "window.BelivAIAgentConfig = " + snippetConfigSerialized + ";",
             "<\\/script>",
             '<script src="https://widget.beliv.io/ai-agent-chat-loader.js"><\\/script>'
           ].join("\n");

@@ -1792,7 +1792,7 @@
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-input{" +
       "  padding:18px 90px 18px 20px;" +
-      "  font-size:clamp(16px,1.2vw,22px);" +
+      "  font-size:clamp(18px,1.35vw,24px);" +
       "  line-height:1.2;" +
       "  color:#0f2a46;" +
       "  font-weight:500;" +
@@ -2625,7 +2625,7 @@
       "    border-radius:12px;" +
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-input{" +
-      "    font-size:16px;" +
+      "    font-size:17px;" +
       "    padding:17px 82px 17px 16px;" +
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-submit{" +
@@ -2676,7 +2676,7 @@
       "    border-radius:10px;" +
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-input{" +
-      "    font-size:15px;" +
+      "    font-size:16px;" +
       "    padding:16px 72px 16px 14px;" +
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-submit{" +
