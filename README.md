@@ -30,11 +30,15 @@ Optional config before the script:
     subtitle: "Ask anything about this website.",
     disclaimer: "This conversation is for convenience only and is not legal advice.",
     position: "bottom-right",
-    endpoint: "https://app.beliv.io/webhook/ai-agent"
+    endpoint: "https://app.beliv.io/webhook/ai-agent" // LIVE (default)
   };
 </script>
 <script src="https://widget.beliv.io/web-ai-agent/ai-agent-chat-loader.js"></script>
 ```
+
+Endpoint options:
+- LIVE (default): `https://app.beliv.io/webhook/ai-agent`
+- TEST: `https://app.beliv.io/internal/webhook-test/ai-agent`
 
 ## Runtime context fields
 

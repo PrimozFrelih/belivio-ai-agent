@@ -99,7 +99,7 @@
     popupWidth: normalizeSize(runtimeConfig.popupWidth, "420px", 320),
     popupHeight: normalizeSize(runtimeConfig.popupHeight, "620px", 360),
     brandLabel: normalizeText(runtimeConfig.brandLabel, DEFAULT_CONFIG.brandLabel),
-    endpoint: DEFAULT_ENDPOINT
+    endpoint: normalizeEndpoint(runtimeConfig.endpoint, DEFAULT_ENDPOINT)
   };
   if (autoSubtitle) {
     config.subtitle = "Ask anything about " + config.siteName + ".";
@@ -1096,6 +1096,9 @@
           if (Object.prototype.hasOwnProperty.call(nextContext, "currentUrl")) {
             window.BelivAIAgentConfig.currentUrl = nextContext.currentUrl;
           }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "endpoint")) {
+            window.BelivAIAgentConfig.endpoint = nextContext.endpoint;
+          }
         }
         applyContextOverrides(nextContext);
       },
@@ -1153,7 +1156,8 @@
       welcomeMessage: liveConfig.welcomeMessage,
       disclaimer: liveConfig.disclaimer,
       brandLabel: liveConfig.brandLabel,
-      currentUrl: liveConfig.currentUrl
+      currentUrl: liveConfig.currentUrl,
+      endpoint: liveConfig.endpoint
     };
   }
 
@@ -1206,6 +1210,7 @@
     var nextDisclaimer = normalizeOptionalText(nextContext.disclaimer, config.disclaimer);
     var nextBrandLabel = normalizeText(nextContext.brandLabel, config.brandLabel);
     var nextCurrentUrl = normalizeUrl(nextContext.currentUrl, config.currentUrl || window.location.href);
+    var nextEndpoint = normalizeEndpoint(nextContext.endpoint, config.endpoint);
     var nextDomainFallback =
       domainFromUrl(nextCurrentUrl) || config.domain || window.location.hostname || "";
     var nextDomain = normalizeDomain(nextContext.domain, nextDomainFallback);
@@ -1230,6 +1235,7 @@
     config.brandLabel = nextBrandLabel;
     config.disclaimer = nextDisclaimer;
     config.currentUrl = nextCurrentUrl;
+    config.endpoint = nextEndpoint;
 
     if (autoSubtitle && !hasSubtitleOverride) {
       config.subtitle = "Ask anything about " + config.siteName + ".";
@@ -1581,6 +1587,22 @@
     }
     try {
       return new URL(candidate, window.location.href).toString();
+    } catch (error) {
+      return String(fallback || "");
+    }
+  }
+
+  function normalizeEndpoint(value, fallback) {
+    var candidate = normalizeText(String(value || ""), String(fallback || ""));
+    if (!candidate) {
+      return String(fallback || "");
+    }
+    try {
+      var parsed = new URL(candidate, window.location.href);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+        return parsed.toString();
+      }
+      return String(fallback || "");
     } catch (error) {
       return String(fallback || "");
     }

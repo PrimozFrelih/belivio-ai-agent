@@ -418,6 +418,13 @@
               <label for="cfgCurrentUrl">Current URL</label>
               <input id="cfgCurrentUrl" type="url" value="" />
             </div>
+            <div class="field">
+              <label for="cfgEndpointMode">Endpoint Mode</label>
+              <select id="cfgEndpointMode">
+                <option value="live" selected>LIVE</option>
+                <option value="test">TEST</option>
+              </select>
+            </div>
           </form>
         </aside>
 
@@ -444,6 +451,8 @@
     </main>
 
     <script>
+      var LIVE_ENDPOINT = "https://app.beliv.io/webhook/ai-agent";
+      var TEST_ENDPOINT = "https://app.beliv.io/internal/webhook-test/ai-agent";
       var runtimeCurrentUrl = window.location.href;
       window.BelivAIAgentConfig = {
         title: "Website AI Helper",
@@ -465,7 +474,7 @@
         welcomeMessage: "Hi! I can help you find information from Beliv Demo Docs.",
         disclaimer: "This conversation is for convenience only and is not legal advice.",
         brandLabel: "Powered by Beliv",
-        endpoint: "https://app.beliv.io/webhook/ai-agent"
+        endpoint: LIVE_ENDPOINT
       };
     </script>
     <script src="./ai-agent-chat-loader.js"></script>
@@ -476,6 +485,7 @@
         var copyButton = document.getElementById("copySnippetBtn");
         var copyStatus = document.getElementById("copyStatus");
         var currentUrlInput = document.getElementById("cfgCurrentUrl");
+        var endpointModeInput = document.getElementById("cfgEndpointMode");
 
         function syncRuntimeCurrentUrl() {
           var runtimeUrl = window.location.href;
@@ -510,8 +520,13 @@
             position: readValue("cfgPosition") || "bottom-right",
             hostSelector: readValue("cfgHostSelector"),
             hostPlacement: readValue("cfgHostPlacement") || "append",
-            currentUrl: readValue("cfgCurrentUrl")
+            currentUrl: readValue("cfgCurrentUrl"),
+            endpointMode: readValue("cfgEndpointMode") || "live"
           };
+        }
+
+        function endpointFromMode(mode) {
+          return String(mode || "").toLowerCase() === "test" ? TEST_ENDPOINT : LIVE_ENDPOINT;
         }
 
         function buildImplementableSnippet(config) {
@@ -534,7 +549,7 @@
             welcomeMessage: config.welcomeMessage,
             disclaimer: config.disclaimer,
             brandLabel: config.brandLabel,
-            endpoint: window.BelivAIAgentConfig.endpoint
+            endpoint: config.endpoint
           };
           var snippetConfigSerialized = JSON.stringify(snippetConfig, null, 2).replace(
             /"currentUrl":\s*"[^"]*"/,
@@ -553,6 +568,10 @@
           var runtimeUrl = syncRuntimeCurrentUrl();
           var config = readConfigFromForm();
           config.currentUrl = runtimeUrl;
+          config.endpoint = endpointFromMode(config.endpointMode);
+          if (endpointModeInput) {
+            endpointModeInput.value = config.endpointMode;
+          }
           document.documentElement.style.setProperty("--accent", config.mainColor || "#1877f2");
 
           Object.assign(window.BelivAIAgentConfig, config);
@@ -576,7 +595,8 @@
               welcomeMessage: config.welcomeMessage,
               disclaimer: config.disclaimer,
               brandLabel: config.brandLabel,
-              currentUrl: config.currentUrl
+              currentUrl: config.currentUrl,
+              endpoint: config.endpoint
             });
           }
 
