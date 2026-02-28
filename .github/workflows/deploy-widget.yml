@@ -47,12 +47,13 @@ jobs:
 
       - name: Deploy to SFTP
         if: success() && github.ref == 'refs/heads/main'
-        uses: appleboy/scp-action@v0.1.7
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:
-          host: ${{ secrets.FTP_SERVER }}
+          server: ${{ secrets.FTP_SERVER }}
           port: ${{ secrets.FTP_PORT || '22' }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          source: "dist/ai-agent-chat-loader.js,dist/demo-host.html,dist/index.html"
-          target: "/root/web/web-ai-agent/"
-          strip_components: 1
+          local_path: "./dist/*"
+          remote_path: "/root/web/web-ai-agent/"
+          sftp_only: true
+          sftpArgs: "-o ConnectTimeout=10"
