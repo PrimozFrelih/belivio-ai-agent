@@ -119,6 +119,7 @@ Behavior:
   - `demo-host.html`
   - `index.html` (same content as `demo-host.html`)
 - After successful `main` deploy, workflow also uploads `dist/` to FTP path `/root/web/web-ai-agent/`.
+- You can also run the deploy manually from GitHub Actions using `workflow_dispatch`.
 
 This gives you one always-current deployment package without creating a new version tag each time.
 
