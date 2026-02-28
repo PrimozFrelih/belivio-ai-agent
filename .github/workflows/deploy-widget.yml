@@ -47,12 +47,12 @@ jobs:
 
       - name: Deploy to SFTP
         if: success() && github.ref == 'refs/heads/main'
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        uses: wangyucode/sftp-upload-action@v2.0.4
         with:
-          server: ${{ secrets.FTP_SERVER }}
+          host: ${{ secrets.FTP_SERVER }}
           port: ${{ secrets.FTP_PORT || '22' }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local_path: "./dist/*"
-          remote_path: "/root/web/web-ai-agent/"
-          sftpArgs: "-o ConnectTimeout=10"
+          localDir: "./dist"
+          remoteDir: ${{ secrets.FTP_REMOTE_PATH || 'web/web-ai-agent' }}
+          forceUpload: true
