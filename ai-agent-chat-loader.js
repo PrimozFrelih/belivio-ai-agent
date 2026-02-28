@@ -1791,7 +1791,7 @@
       "  -webkit-backdrop-filter:blur(7px) saturate(120%);" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-input{" +
-      "  padding:18px 90px 18px 20px;" +
+      "  padding:18px 95px 18px 20px;" +
       "  font-size:clamp(18px,1.35vw,24px);" +
       "  line-height:1.2;" +
       "  color:#0f2a46;" +
@@ -1806,7 +1806,7 @@
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-submit{" +
       "  position:absolute;" +
-      "  right:5px;" +
+      "  right:10px;" +
       "  top:calc(50% - 22.5px);" +
       "  bottom:auto;" +
       "  transform:none;" +
@@ -2626,13 +2626,13 @@
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-input{" +
       "    font-size:17px;" +
-      "    padding:17px 82px 17px 16px;" +
+      "    padding:17px 87px 17px 16px;" +
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-submit{" +
       "    width:62px;" +
       "    min-width:62px;" +
       "    border-radius:11px;" +
-      "    right:5px;" +
+      "    right:10px;" +
       "    top:calc(50% - 22.5px);" +
       "    bottom:auto;" +
       "    height:45px;" +
@@ -2677,7 +2677,7 @@
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-input{" +
       "    font-size:16px;" +
-      "    padding:16px 72px 16px 14px;" +
+      "    padding:16px 75px 16px 14px;" +
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-submit{" +
       "    top:calc(50% - 22.5px);" +
@@ -2685,7 +2685,7 @@
       "    width:56px;" +
       "    min-width:56px;" +
       "    height:45px;" +
-      "    right:3px;" +
+      "    right:6px;" +
       "    border-radius:9px;" +
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-agent{" +
