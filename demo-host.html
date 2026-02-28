@@ -416,7 +416,7 @@
             </div>
             <div class="field field-wide">
               <label for="cfgCurrentUrl">Current URL</label>
-              <input id="cfgCurrentUrl" type="url" value="https://demo.beliv.io/docs/getting-started" />
+              <input id="cfgCurrentUrl" type="url" value="" />
             </div>
           </form>
         </aside>
@@ -444,6 +444,7 @@
     </main>
 
     <script>
+      var runtimeCurrentUrl = window.location.href;
       window.BelivAIAgentConfig = {
         title: "Website AI Helper",
         subtitle: "Instant answers from your website knowledge base.",
@@ -455,7 +456,7 @@
         position: "bottom-right",
         hostSelector: "#widgetMount",
         hostPlacement: "append",
-        currentUrl: "https://demo.beliv.io/docs/getting-started",
+        currentUrl: runtimeCurrentUrl,
         placeholder: "What service do you need?",
         launcherPlaceholder: "Ask anything about this website...",
         popupPlaceholder: "Continue the conversation...",
@@ -464,10 +465,7 @@
         welcomeMessage: "Hi! I can help you find information from Beliv Demo Docs.",
         disclaimer: "This conversation is for convenience only and is not legal advice.",
         brandLabel: "Powered by Beliv",
-        endpoint: "https://app.beliv.io/webhook/ai-agent",
-        payload: {
-          source: "demo-host-showcase"
-        }
+        endpoint: "https://app.beliv.io/webhook/ai-agent"
       };
     </script>
     <script src="./ai-agent-chat-loader.js"></script>
@@ -477,6 +475,16 @@
         var snippet = document.getElementById("embedSnippet");
         var copyButton = document.getElementById("copySnippetBtn");
         var copyStatus = document.getElementById("copyStatus");
+        var currentUrlInput = document.getElementById("cfgCurrentUrl");
+
+        function syncRuntimeCurrentUrl() {
+          var runtimeUrl = window.location.href;
+          if (currentUrlInput) {
+            currentUrlInput.value = runtimeUrl;
+          }
+          window.BelivAIAgentConfig.currentUrl = runtimeUrl;
+          return runtimeUrl;
+        }
 
         function readValue(id) {
           var element = document.getElementById(id);
@@ -538,7 +546,9 @@
         }
 
         function applyShowcaseConfig() {
+          var runtimeUrl = syncRuntimeCurrentUrl();
           var config = readConfigFromForm();
+          config.currentUrl = runtimeUrl;
           document.documentElement.style.setProperty("--accent", config.mainColor || "#1877f2");
 
           Object.assign(window.BelivAIAgentConfig, config);
@@ -582,6 +592,7 @@
         form.addEventListener("change", applyShowcaseConfig);
         copyButton.addEventListener("click", copySnippet);
 
+        syncRuntimeCurrentUrl();
         applyShowcaseConfig();
       })();
     </script>

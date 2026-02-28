@@ -36,8 +36,7 @@
     popupWidth: 420,
     popupHeight: 620,
     brandLabel: "Powered by Beliv",
-    endpoint: DEFAULT_ENDPOINT,
-    payload: {}
+    endpoint: DEFAULT_ENDPOINT
   };
 
   var userConfig = isPlainObject(window.BelivAIAgentConfig) ? window.BelivAIAgentConfig : {};
@@ -100,8 +99,7 @@
     popupWidth: normalizeSize(runtimeConfig.popupWidth, "420px", 320),
     popupHeight: normalizeSize(runtimeConfig.popupHeight, "620px", 360),
     brandLabel: normalizeText(runtimeConfig.brandLabel, DEFAULT_CONFIG.brandLabel),
-    endpoint: DEFAULT_ENDPOINT,
-    payload: isPlainObject(runtimeConfig.payload) ? runtimeConfig.payload : {}
+    endpoint: DEFAULT_ENDPOINT
   };
   if (autoSubtitle) {
     config.subtitle = "Ask anything about " + config.siteName + ".";
@@ -867,40 +865,17 @@
   }
 
   async function queryBackend(prompt) {
-    var payload = mergeOptions(config.payload, {
-      prompt: prompt,
-      message: prompt,
-      question: prompt,
-      chatInput: prompt,
+    var requestCurrentUrl = normalizeUrl(window.location.href, config.currentUrl);
+    if (requestCurrentUrl) {
+      config.currentUrl = requestCurrentUrl;
+    }
+    var payload = {
       ChatInput: prompt,
-      SessionID: state.sessionId,
-      title: config.title,
-      subtitle: config.subtitle,
-      siteName: config.siteName,
-      domain: config.domain,
-      mainColor: config.mainColor,
-      theme: config.theme,
-      mode: config.mode,
-      hostSelector: config.hostSelector,
-      hostPlacement: config.hostPlacement,
-      placeholder: config.placeholder,
-      popupPlaceholder: config.popupPlaceholder,
-      launcherButtonLabel: config.launcherButtonLabel,
-      popupButtonLabel: config.popupButtonLabel,
-      welcomeMessage: config.welcomeMessage,
-      disclaimer: config.disclaimer,
-      brandLabel: config.brandLabel,
-      sessionId: state.sessionId,
-      session_id: state.sessionId,
-      pageUrl: config.currentUrl,
       CurrentURL: config.currentUrl,
-      currentUrl: config.currentUrl,
-      current_url: config.currentUrl,
-      pageTitle: document.title || "",
-      host: window.location.host,
-      referrer: document.referrer || "",
+      SessionID: state.sessionId,
+      domain: config.domain,
       history: state.messages.slice()
-    });
+    };
 
     var response = await fetchWithTimeout(config.endpoint, {
       method: "POST",

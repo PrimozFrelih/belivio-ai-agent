@@ -4,6 +4,7 @@ Embeddable JavaScript widget that adds:
 - a docked input bar (`text field + right-side button`) on the host site
 - a popup chat for continued conversation
 - prompt delivery to `https://app.beliv.io/webhook/ai-agent`
+- live showcase: [https://widget.beliv.io/web-ai-agent/](https://widget.beliv.io/web-ai-agent/)
 
 ## Embed
 
@@ -25,7 +26,7 @@ Optional config before the script:
     hostSelector: "#widgetMount",
     hostPlacement: "append", // "append" or "prepend"
     placeholder: "What service do you need?",
-    currentUrl: "https://acme.com/pricing",
+    currentUrl: window.location.href,
     subtitle: "Ask anything about this website.",
     disclaimer: "This conversation is for convenience only and is not legal advice.",
     position: "bottom-right",
@@ -78,7 +79,7 @@ Input length is capped at 200 characters per message.
   window.BelivAIAgentConfig.welcomeMessage = "Hi! I can help you find information from Acme Help Center.";
   window.BelivAIAgentConfig.disclaimer = "This conversation is for convenience only and is not legal advice.";
   window.BelivAIAgentConfig.brandLabel = "Powered by Beliv";
-  window.BelivAIAgentConfig.currentUrl = "https://acme.com/docs/pricing";
+  window.BelivAIAgentConfig.currentUrl = window.location.href;
 
   // Optional immediate UI/layout refresh
   window.BelivAIAgent.updateContext({
@@ -176,15 +177,12 @@ git push origin v1.0.0
 - `zIndex`
 - `brandLabel`
 - `endpoint`
-- `payload` (extra fields merged into each webhook request body)
 
 ## Webhook request body
 
-Each message sends JSON with these fields (plus `payload` overrides):
-- `prompt`, `message`, `question`, `chatInput`, `ChatInput`
-- `title`, `subtitle`, `siteName`, `domain`, `mainColor`, `theme`, `mode`
-- `hostSelector`, `hostPlacement`, `placeholder`, `popupPlaceholder`
-- `launcherButtonLabel`, `popupButtonLabel`, `welcomeMessage`, `disclaimer`, `brandLabel`
-- `sessionId`, `session_id`
-- `pageUrl`, `currentUrl`, `current_url`, `pageTitle`, `host`, `referrer`
+Each message sends JSON with only these fields:
+- `ChatInput`
+- `CurrentURL` (always from the actual page URL at submit time)
+- `SessionID`
+- `domain`
 - `history` (chat history array with `role` and `content`)
