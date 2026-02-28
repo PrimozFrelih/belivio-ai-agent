@@ -3,7 +3,7 @@
 Embeddable JavaScript widget that adds:
 - a docked input bar (`text field + right-side button`) on the host site
 - a popup chat for continued conversation
-- prompt delivery to `https://app.beliv.io/webhook/ai-chat-prompt`
+- prompt delivery to `https://app.beliv.io/webhook/ai-agent`
 
 ## Embed
 
@@ -29,7 +29,7 @@ Optional config before the script:
     subtitle: "Ask anything about this website.",
     disclaimer: "This conversation is for convenience only and is not legal advice.",
     position: "bottom-right",
-    endpoint: "https://app.beliv.io/webhook/ai-chat-prompt"
+    endpoint: "https://app.beliv.io/webhook/ai-agent"
   };
 </script>
 <script src="https://widget.beliv.io/ai-agent-chat-loader.js"></script>
