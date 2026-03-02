@@ -14,7 +14,7 @@
     title: "Beliv.io website agent Widget",
     subtitle: "Ask anything about this website.",
     siteName: "this website",
-    domain: "",
+    domain: "agital.si",
     mainColor: "#1877f2",
     theme: "light",
     mode: "fullcenter",
@@ -424,6 +424,7 @@
 
     link.classList.add("beliv-visible");
     link.setAttribute("href", href);
+    link.setAttribute("target", "_top");
     link.setAttribute("aria-label", label);
     link.setAttribute("title", label);
     link.setAttribute("aria-hidden", "false");
@@ -896,12 +897,12 @@
       if (match[1]) {
         var urlHref = normalizeAutoLinkUrl(candidate);
         if (urlHref) {
-          link = createAutoLinkNode(urlHref, candidate, true);
+          link = createAutoLinkNode(urlHref, candidate);
         }
       } else {
         var phoneHref = buildTelHref(candidate);
         if (phoneHref) {
-          link = createAutoLinkNode(phoneHref, candidate, false);
+          link = createAutoLinkNode(phoneHref, candidate);
         }
       }
 
@@ -966,15 +967,12 @@
     }
   }
 
-  function createAutoLinkNode(href, label, openInNewTab) {
+  function createAutoLinkNode(href, label) {
     var link = document.createElement("a");
     link.className = "beliv-auto-link";
     link.href = href;
+    link.target = "_top";
     link.textContent = label;
-    if (openInNewTab) {
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-    }
     return link;
   }
 
