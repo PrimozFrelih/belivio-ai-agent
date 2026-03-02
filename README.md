@@ -172,6 +172,8 @@ git push origin v1.0.0
 - `popupButtonLabel`
 - `welcomeMessage`
 - `disclaimer` (shown at the top of the chat as a warning/info banner)
+- `contactEmail` (optional; shows an email icon button in popup header when set)
+- `contactPhone` (optional; shows a phone icon button in popup header when set)
 - `position` (`bottom-right` or `bottom-left`)
 - `accentColor`
 - `accentColorDark`

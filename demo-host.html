@@ -365,6 +365,19 @@
                 value="This conversation is for convenience only and is not legal advice."
               />
             </div>
+            <div class="field">
+              <label for="cfgContactEmail">Contact Email</label>
+              <input
+                id="cfgContactEmail"
+                type="email"
+                value="primoz.frelih@agital.si"
+                placeholder="support@example.com"
+              />
+            </div>
+            <div class="field">
+              <label for="cfgContactPhone">Contact Phone</label>
+              <input id="cfgContactPhone" type="tel" value="00 386 41 980 991" placeholder="+38640123456" />
+            </div>
             <div class="field field-wide">
               <label for="cfgBrandLabel">Brand Label</label>
               <input id="cfgBrandLabel" type="text" value="Powered by Beliv" />
@@ -473,6 +486,8 @@
         popupButtonLabel: "Send",
         welcomeMessage: "Hi! I can help you find information from Beliv Demo Docs.",
         disclaimer: "This conversation is for convenience only and is not legal advice.",
+        contactEmail: "primoz.frelih@agital.si",
+        contactPhone: "00 386 41 980 991",
         brandLabel: "Powered by Beliv",
         endpoint: LIVE_ENDPOINT
       };
@@ -511,6 +526,8 @@
             popupButtonLabel: readValue("cfgPopupBtnLabel"),
             welcomeMessage: readValue("cfgWelcomeMessage"),
             disclaimer: readValue("cfgDisclaimer"),
+            contactEmail: readValue("cfgContactEmail"),
+            contactPhone: readValue("cfgContactPhone"),
             brandLabel: readValue("cfgBrandLabel"),
             siteName: readValue("cfgSiteName"),
             domain: readValue("cfgDomain"),
@@ -548,6 +565,8 @@
             popupButtonLabel: config.popupButtonLabel,
             welcomeMessage: config.welcomeMessage,
             disclaimer: config.disclaimer,
+            contactEmail: config.contactEmail,
+            contactPhone: config.contactPhone,
             brandLabel: config.brandLabel,
             endpoint: config.endpoint
           };
@@ -594,6 +613,8 @@
               popupButtonLabel: config.popupButtonLabel,
               welcomeMessage: config.welcomeMessage,
               disclaimer: config.disclaimer,
+              contactEmail: config.contactEmail,
+              contactPhone: config.contactPhone,
               brandLabel: config.brandLabel,
               currentUrl: config.currentUrl,
               endpoint: config.endpoint

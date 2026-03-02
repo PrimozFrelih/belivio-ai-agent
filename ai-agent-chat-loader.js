@@ -28,6 +28,8 @@
     popupButtonLabel: "Send",
     welcomeMessage: "Hi! I can help you find information from this website.",
     disclaimer: "",
+    contactEmail: "primoz.frelih@agital.si",
+    contactPhone: "00 386 41 980 991",
     accentColor: "#1877f2",
     accentColorDark: "#1663d8",
     textColor: "#0f172a",
@@ -90,6 +92,8 @@
     popupButtonLabel: normalizeText(runtimeConfig.popupButtonLabel, DEFAULT_CONFIG.popupButtonLabel),
     welcomeMessage: normalizeText(runtimeConfig.welcomeMessage, DEFAULT_CONFIG.welcomeMessage),
     disclaimer: normalizeOptionalText(runtimeConfig.disclaimer, ""),
+    contactEmail: normalizeEmail(runtimeConfig.contactEmail || runtimeConfig.email, ""),
+    contactPhone: normalizePhone(runtimeConfig.contactPhone || runtimeConfig.phone, ""),
     accentColor: resolvedAccentColor,
     accentColorDark: resolvedAccentColorDark,
     accentColorLight: resolvedAccentColorLight,
@@ -132,6 +136,8 @@
     modal: null,
     panel: null,
     closeButton: null,
+    contactEmailLink: null,
+    contactPhoneLink: null,
     messages: null,
     subtitleText: null,
     chatForm: null,
@@ -182,7 +188,15 @@
       '            <p class="beliv-subtitle"></p>' +
       "          </div>" +
       "        </div>" +
-      '        <button class="beliv-close" type="button" aria-label="Close chat">&times;</button>' +
+      '        <div class="beliv-header-actions">' +
+      '          <a class="beliv-contact-link beliv-contact-email" aria-label="Send email">' +
+      '            <span class="beliv-contact-icon" aria-hidden="true">&#9993;</span>' +
+      "          </a>" +
+      '          <a class="beliv-contact-link beliv-contact-phone" aria-label="Call phone">' +
+      '            <span class="beliv-contact-icon" aria-hidden="true">&#9990;</span>' +
+      "          </a>" +
+      '          <button class="beliv-close" type="button" aria-label="Close chat">&times;</button>' +
+      "        </div>" +
       "      </header>" +
       '      <div class="beliv-messages" aria-live="polite"></div>' +
       '      <form class="beliv-chat-form" novalidate>' +
@@ -212,6 +226,8 @@
     refs.modal = root.querySelector(".beliv-modal");
     refs.panel = root.querySelector(".beliv-panel");
     refs.closeButton = root.querySelector(".beliv-close");
+    refs.contactEmailLink = root.querySelector(".beliv-contact-email");
+    refs.contactPhoneLink = root.querySelector(".beliv-contact-phone");
     refs.messages = root.querySelector(".beliv-messages");
     refs.subtitleText = root.querySelector(".beliv-subtitle");
     refs.chatForm = root.querySelector(".beliv-chat-form");
@@ -229,6 +245,7 @@
     refs.launcherButton.setAttribute("aria-label", config.launcherButtonLabel);
     renderChatButtonIdle();
     syncHostFavicon();
+    syncHeaderContactActions();
 
     bindEvents(root);
     bindPublicApi();
@@ -377,6 +394,59 @@
     }
     refs.chatButton.innerHTML = '<span class="beliv-chat-submit-icon" aria-hidden="true"></span>';
     refs.chatButton.setAttribute("aria-label", config.popupButtonLabel);
+  }
+
+  function syncHeaderContactActions() {
+    syncHeaderContactLink(refs.contactEmailLink, config.contactEmail, "email");
+    syncHeaderContactLink(refs.contactPhoneLink, config.contactPhone, "phone");
+  }
+
+  function syncHeaderContactLink(link, value, type) {
+    if (!link) {
+      return;
+    }
+    var href = "";
+    var label = "";
+    if (type === "email") {
+      href = buildMailtoHref(value);
+      label = value ? "Send email to " + value : "Send email";
+    } else {
+      href = buildTelHref(value);
+      label = value ? "Call " + value : "Call phone";
+    }
+
+    if (!href) {
+      link.classList.remove("beliv-visible");
+      link.removeAttribute("href");
+      link.setAttribute("aria-hidden", "true");
+      return;
+    }
+
+    link.classList.add("beliv-visible");
+    link.setAttribute("href", href);
+    link.setAttribute("aria-label", label);
+    link.setAttribute("title", label);
+    link.setAttribute("aria-hidden", "false");
+  }
+
+  function buildMailtoHref(value) {
+    var email = normalizeEmail(value, "");
+    if (!email) {
+      return "";
+    }
+    return "mailto:" + email;
+  }
+
+  function buildTelHref(value) {
+    var phone = normalizePhone(value, "");
+    if (!phone) {
+      return "";
+    }
+    var compact = phone.replace(/[^\d+]/g, "");
+    if (!compact || !/\d/.test(compact)) {
+      return "";
+    }
+    return "tel:" + compact;
   }
 
   function triggerChatComposerOpenFlash() {
@@ -761,13 +831,194 @@
 
     var bubble = document.createElement("div");
     bubble.className = "beliv-bubble";
-    bubble.textContent = text;
+    renderBubbleContent(bubble, text, role === "assistant");
     row.appendChild(bubble);
 
     refs.messages.appendChild(row);
+    scrollMessagesToBottom();
+    return row;
+  }
+
+  function scrollMessagesToBottom() {
+    if (!refs.messages) {
+      return;
+    }
     refs.messages.scrollTop = refs.messages.scrollHeight;
     refs.messages.scrollLeft = 0;
-    return row;
+  }
+
+  function setMessageRowText(row, text) {
+    if (!row) {
+      return;
+    }
+    var bubble = row.querySelector(".beliv-bubble");
+    if (!bubble) {
+      return;
+    }
+    renderBubbleContent(bubble, text, row.classList.contains("beliv-row-assistant"));
+    scrollMessagesToBottom();
+  }
+
+  function renderBubbleContent(bubble, text, enableAutoLinks) {
+    if (!bubble) {
+      return;
+    }
+    var normalized = typeof text === "string" ? text : normalizeAssistantText(text);
+    if (!enableAutoLinks) {
+      bubble.textContent = normalized;
+      return;
+    }
+    bubble.textContent = "";
+    appendAutoLinkedText(bubble, normalized);
+  }
+
+  function appendAutoLinkedText(container, text) {
+    if (!container || typeof text !== "string" || !text) {
+      return;
+    }
+    var pattern = /((?:https?:\/\/|www\.)[^\s<>"']+)|((?:\+|00)?\d[\d\s().-]{6,}\d)/gi;
+    var lastIndex = 0;
+    var match;
+
+    while ((match = pattern.exec(text))) {
+      var start = match.index;
+      var end = pattern.lastIndex;
+      if (start > lastIndex) {
+        container.appendChild(document.createTextNode(text.slice(lastIndex, start)));
+      }
+
+      var raw = text.slice(start, end);
+      var split = splitTrailingLinkPunctuation(raw);
+      var candidate = split.value;
+      var trailing = split.trailing;
+      var link = null;
+
+      if (match[1]) {
+        var urlHref = normalizeAutoLinkUrl(candidate);
+        if (urlHref) {
+          link = createAutoLinkNode(urlHref, candidate, true);
+        }
+      } else {
+        var phoneHref = buildTelHref(candidate);
+        if (phoneHref) {
+          link = createAutoLinkNode(phoneHref, candidate, false);
+        }
+      }
+
+      if (link) {
+        container.appendChild(link);
+      } else if (candidate) {
+        container.appendChild(document.createTextNode(candidate));
+      }
+      if (trailing) {
+        container.appendChild(document.createTextNode(trailing));
+      }
+
+      lastIndex = end;
+    }
+
+    if (lastIndex < text.length) {
+      container.appendChild(document.createTextNode(text.slice(lastIndex)));
+    }
+  }
+
+  function splitTrailingLinkPunctuation(value) {
+    var trailing = "";
+    var core = String(value || "");
+
+    while (core && /[.,!?;:]/.test(core.charAt(core.length - 1))) {
+      trailing = core.charAt(core.length - 1) + trailing;
+      core = core.slice(0, -1);
+    }
+
+    while (core && core.charAt(core.length - 1) === ")") {
+      var openCount = (core.match(/\(/g) || []).length;
+      var closeCount = (core.match(/\)/g) || []).length;
+      if (closeCount <= openCount) {
+        break;
+      }
+      trailing = ")" + trailing;
+      core = core.slice(0, -1);
+    }
+
+    return {
+      value: core,
+      trailing: trailing
+    };
+  }
+
+  function normalizeAutoLinkUrl(value) {
+    var candidate = String(value || "").trim();
+    if (!candidate) {
+      return "";
+    }
+    if (/^www\./i.test(candidate)) {
+      candidate = "https://" + candidate;
+    }
+    try {
+      var parsed = new URL(candidate, window.location.href);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+        return parsed.toString();
+      }
+      return "";
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function createAutoLinkNode(href, label, openInNewTab) {
+    var link = document.createElement("a");
+    link.className = "beliv-auto-link";
+    link.href = href;
+    link.textContent = label;
+    if (openInNewTab) {
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+    }
+    return link;
+  }
+
+  function shouldAnimateAssistantReply() {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return true;
+    }
+    return !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
+  function delay(ms) {
+    return new Promise(function (resolve) {
+      window.setTimeout(resolve, ms);
+    });
+  }
+
+  async function renderAssistantReplyInJs(row, text) {
+    var finalText = normalizeAssistantText(text);
+    if (!row) {
+      return finalText;
+    }
+    if (!finalText) {
+      setMessageRowText(row, "");
+      return finalText;
+    }
+    if (!shouldAnimateAssistantReply() || finalText.length < 24) {
+      setMessageRowText(row, finalText);
+      return finalText;
+    }
+
+    var chunkSize = 2;
+    if (finalText.length > 220) {
+      chunkSize = 3;
+    }
+    if (finalText.length > 420) {
+      chunkSize = 4;
+    }
+    var index = 0;
+    while (index < finalText.length) {
+      index = Math.min(finalText.length, index + chunkSize);
+      setMessageRowText(row, finalText.slice(0, index));
+      await delay(18);
+    }
+    return finalText;
   }
 
   function appendTyping() {
@@ -836,25 +1087,59 @@
 
     setSending(true);
     var typingRow = appendTyping();
+    var assistantRow = null;
+    var receivedStreamUpdate = false;
+    var streamUpdateCount = 0;
+    var streamedReply = "";
 
-    try {
-      var reply = await queryBackend(normalizedPrompt);
+    function ensureAssistantRow() {
+      if (assistantRow) {
+        return assistantRow;
+      }
       if (typingRow && typingRow.parentNode) {
         typingRow.parentNode.removeChild(typingRow);
       }
+      assistantRow = appendMessage("assistant", "");
+      return assistantRow;
+    }
+
+    function handleStreamUpdate(nextText) {
+      if (typeof nextText !== "string") {
+        nextText = normalizeAssistantText(nextText);
+      }
+      if (nextText === streamedReply) {
+        return;
+      }
+      receivedStreamUpdate = true;
+      streamUpdateCount += 1;
+      streamedReply = nextText;
+      setMessageRowText(ensureAssistantRow(), streamedReply);
+    }
+
+    try {
+      var reply = await queryBackend(normalizedPrompt, handleStreamUpdate);
+      reply = normalizeAssistantText(reply);
       if (!reply) {
         reply = "I could not find an answer yet. Please try rephrasing your question.";
       }
+      if (receivedStreamUpdate && streamUpdateCount > 3) {
+        setMessageRowText(ensureAssistantRow(), reply);
+      } else {
+        await renderAssistantReplyInJs(ensureAssistantRow(), reply);
+      }
       pushMessage("assistant", reply);
-      appendMessage("assistant", reply);
     } catch (error) {
       if (typingRow && typingRow.parentNode) {
         typingRow.parentNode.removeChild(typingRow);
       }
-      appendMessage(
-        "assistant",
-        "I could not connect to the AI service right now. Please try again in a moment."
-      );
+      if (!assistantRow) {
+        appendMessage(
+          "assistant",
+          "I could not connect to the AI service right now. Please try again in a moment."
+        );
+      } else if (receivedStreamUpdate && streamedReply) {
+        appendMessage("assistant", "Connection was interrupted while streaming. Please try again.");
+      }
       if (window.console && typeof window.console.error === "function") {
         window.console.error("[Beliv AIAgent] Prompt request failed:", error);
       }
@@ -864,7 +1149,7 @@
     }
   }
 
-  async function queryBackend(prompt) {
+  async function queryBackend(prompt, onStreamUpdate) {
     var requestCurrentUrl = normalizeUrl(window.location.href, config.currentUrl);
     if (requestCurrentUrl) {
       config.currentUrl = requestCurrentUrl;
@@ -884,6 +1169,10 @@
       body: JSON.stringify(payload),
       credentials: "omit"
     });
+
+    if (canStreamResponse(response, onStreamUpdate)) {
+      return parseStreamingResponse(response, onStreamUpdate);
+    }
 
     var parsed = await parseResponse(response);
     return normalizeAssistantText(parsed);
@@ -906,6 +1195,265 @@
     } finally {
       window.clearTimeout(timeoutId);
     }
+  }
+
+  function canStreamResponse(response, onStreamUpdate) {
+    if (typeof onStreamUpdate !== "function") {
+      return false;
+    }
+    if (!response || !response.body || typeof response.body.getReader !== "function") {
+      return false;
+    }
+    var contentType = (response.headers.get("content-type") || "").toLowerCase();
+    if (!contentType) {
+      return false;
+    }
+    return (
+      contentType.indexOf("text/event-stream") > -1 ||
+      contentType.indexOf("application/x-ndjson") > -1 ||
+      contentType.indexOf("application/ndjson") > -1 ||
+      contentType.indexOf("text/plain") > -1
+    );
+  }
+
+  function detectStreamMode(contentType) {
+    if (contentType.indexOf("text/event-stream") > -1) {
+      return "sse";
+    }
+    if (
+      contentType.indexOf("application/x-ndjson") > -1 ||
+      contentType.indexOf("application/ndjson") > -1
+    ) {
+      return "ndjson";
+    }
+    return "text";
+  }
+
+  function mergeStreamText(currentText, nextText) {
+    if (typeof nextText !== "string" || nextText.length === 0) {
+      return typeof currentText === "string" ? currentText : "";
+    }
+    if (typeof currentText !== "string" || !currentText) {
+      return nextText;
+    }
+    if (nextText === currentText) {
+      return currentText;
+    }
+    if (nextText.indexOf(currentText) === 0) {
+      return nextText;
+    }
+    if (
+      nextText.length <= currentText.length &&
+      currentText.slice(currentText.length - nextText.length) === nextText
+    ) {
+      return currentText;
+    }
+    return currentText + nextText;
+  }
+
+  function extractStreamText(data) {
+    if (data == null) {
+      return "";
+    }
+    if (typeof data === "string") {
+      if (!data) {
+        return "";
+      }
+      var trimmed = data.trim();
+      if (trimmed === "[DONE]") {
+        return "";
+      }
+      var parsed = tryParseJsonText(trimmed);
+      if (parsed !== null) {
+        return extractStreamText(parsed);
+      }
+      return data;
+    }
+    if (Array.isArray(data)) {
+      var parts = [];
+      var i;
+      for (i = 0; i < data.length; i += 1) {
+        var part = extractStreamText(data[i]);
+        if (typeof part === "string" && part.length > 0) {
+          parts.push(part);
+        }
+      }
+      return parts.join("");
+    }
+    if (typeof data === "object") {
+      var candidates = [
+        readPath(data, ["choices", 0, "delta", "content"]),
+        readPath(data, ["choices", 0, "message", "content"]),
+        readPath(data, ["choices", 0, "text"]),
+        data.delta,
+        data.token,
+        data.chunk,
+        data.content,
+        data.text,
+        data.response,
+        data.answer,
+        data.output,
+        data.message,
+        readPath(data, ["data", "delta"]),
+        readPath(data, ["data", "content"]),
+        readPath(data, ["data", "text"]),
+        readPath(data, ["data", "response"]),
+        readPath(data, ["data", "answer"])
+      ];
+      var j;
+      for (j = 0; j < candidates.length; j += 1) {
+        var value = extractStreamText(candidates[j]);
+        if (typeof value === "string" && value.length > 0) {
+          return value;
+        }
+      }
+    }
+    return "";
+  }
+
+  function appendStreamChunk(stateRef, rawChunk, onStreamUpdate) {
+    if (!stateRef) {
+      return;
+    }
+    var chunkText = extractStreamText(rawChunk);
+    if (typeof chunkText !== "string" || chunkText.length === 0) {
+      return;
+    }
+    var mergedText = mergeStreamText(stateRef.accumulated, chunkText);
+    if (mergedText === stateRef.accumulated) {
+      return;
+    }
+    stateRef.accumulated = mergedText;
+    onStreamUpdate(stateRef.accumulated);
+  }
+
+  function consumeSseBuffer(stateRef, onStreamUpdate, flushAll) {
+    if (!stateRef || typeof stateRef.buffer !== "string") {
+      return;
+    }
+    var chunks = stateRef.buffer.split(/\r?\n\r?\n/);
+    var trailing = chunks.pop();
+    if (flushAll) {
+      stateRef.buffer = "";
+      if (trailing) {
+        chunks.push(trailing);
+      }
+    } else {
+      stateRef.buffer = trailing;
+    }
+    var i;
+    for (i = 0; i < chunks.length; i += 1) {
+      var block = chunks[i];
+      if (!block) {
+        continue;
+      }
+      var lines = block.split(/\r?\n/);
+      var payloadParts = [];
+      var j;
+      for (j = 0; j < lines.length; j += 1) {
+        if (lines[j].indexOf("data:") === 0) {
+          payloadParts.push(lines[j].slice(5).replace(/^\s/, ""));
+        }
+      }
+      if (!payloadParts.length) {
+        continue;
+      }
+      appendStreamChunk(stateRef, payloadParts.join("\n"), onStreamUpdate);
+    }
+  }
+
+  function consumeNdjsonBuffer(stateRef, onStreamUpdate, flushAll) {
+    if (!stateRef || typeof stateRef.buffer !== "string") {
+      return;
+    }
+    var lines = stateRef.buffer.split(/\r?\n/);
+    var trailing = lines.pop();
+    if (flushAll) {
+      stateRef.buffer = "";
+      if (trailing) {
+        lines.push(trailing);
+      }
+    } else {
+      stateRef.buffer = trailing;
+    }
+    var i;
+    for (i = 0; i < lines.length; i += 1) {
+      if (!lines[i]) {
+        continue;
+      }
+      appendStreamChunk(stateRef, lines[i], onStreamUpdate);
+    }
+  }
+
+  async function parseStreamingResponse(response, onStreamUpdate) {
+    if (!response.ok) {
+      var errorText = await response.text();
+      var parsedError = tryParseJsonText(errorText);
+      var errorPayload = parsedError !== null ? parsedError : errorText;
+      throw new Error("HTTP " + response.status + " - " + normalizeAssistantText(errorPayload));
+    }
+
+    var contentType = (response.headers.get("content-type") || "").toLowerCase();
+    var mode = detectStreamMode(contentType);
+    var reader = response.body.getReader();
+    var decoder = typeof TextDecoder === "function" ? new TextDecoder() : null;
+    var stateRef = {
+      accumulated: "",
+      buffer: ""
+    };
+
+    try {
+      while (true) {
+        var result = await reader.read();
+        if (result.done) {
+          break;
+        }
+        var chunkText = "";
+        if (decoder) {
+          chunkText = decoder.decode(result.value, { stream: true });
+        } else if (typeof result.value === "string") {
+          chunkText = result.value;
+        }
+        if (!chunkText) {
+          continue;
+        }
+
+        if (mode === "text") {
+          appendStreamChunk(stateRef, chunkText, onStreamUpdate);
+          continue;
+        }
+
+        stateRef.buffer += chunkText;
+        if (mode === "sse") {
+          consumeSseBuffer(stateRef, onStreamUpdate, false);
+        } else {
+          consumeNdjsonBuffer(stateRef, onStreamUpdate, false);
+        }
+      }
+
+      if (decoder) {
+        var trailingChunk = decoder.decode();
+        if (trailingChunk) {
+          if (mode === "text") {
+            appendStreamChunk(stateRef, trailingChunk, onStreamUpdate);
+          } else {
+            stateRef.buffer += trailingChunk;
+          }
+        }
+      }
+
+      if (mode === "sse") {
+        consumeSseBuffer(stateRef, onStreamUpdate, true);
+      } else if (mode === "ndjson") {
+        consumeNdjsonBuffer(stateRef, onStreamUpdate, true);
+      }
+    } finally {
+      try {
+        reader.releaseLock();
+      } catch (error) {}
+    }
+
+    return normalizeAssistantText(stateRef.accumulated);
   }
 
   async function parseResponse(response) {
@@ -1089,6 +1637,22 @@
           if (Object.prototype.hasOwnProperty.call(nextContext, "disclaimer")) {
             window.BelivAIAgentConfig.disclaimer = nextContext.disclaimer;
           }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "contactEmail")) {
+            window.BelivAIAgentConfig.contactEmail = nextContext.contactEmail;
+            window.BelivAIAgentConfig.email = nextContext.contactEmail;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "email")) {
+            window.BelivAIAgentConfig.contactEmail = nextContext.email;
+            window.BelivAIAgentConfig.email = nextContext.email;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "contactPhone")) {
+            window.BelivAIAgentConfig.contactPhone = nextContext.contactPhone;
+            window.BelivAIAgentConfig.phone = nextContext.contactPhone;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "phone")) {
+            window.BelivAIAgentConfig.contactPhone = nextContext.phone;
+            window.BelivAIAgentConfig.phone = nextContext.phone;
+          }
           if (Object.prototype.hasOwnProperty.call(nextContext, "brandLabel")) {
             window.BelivAIAgentConfig.brandLabel = nextContext.brandLabel;
           }
@@ -1154,6 +1718,8 @@
       popupButtonLabel: liveConfig.popupButtonLabel,
       welcomeMessage: liveConfig.welcomeMessage,
       disclaimer: liveConfig.disclaimer,
+      contactEmail: liveConfig.contactEmail || liveConfig.email,
+      contactPhone: liveConfig.contactPhone || liveConfig.phone,
       brandLabel: liveConfig.brandLabel,
       currentUrl: liveConfig.currentUrl,
       endpoint: liveConfig.endpoint
@@ -1207,6 +1773,18 @@
     var nextPopupButtonLabel = normalizeText(nextContext.popupButtonLabel, config.popupButtonLabel);
     var nextWelcomeMessage = normalizeText(nextContext.welcomeMessage, config.welcomeMessage);
     var nextDisclaimer = normalizeOptionalText(nextContext.disclaimer, config.disclaimer);
+    var nextContactEmail = normalizeEmail(
+      Object.prototype.hasOwnProperty.call(nextContext, "contactEmail")
+        ? nextContext.contactEmail
+        : nextContext.email,
+      config.contactEmail
+    );
+    var nextContactPhone = normalizePhone(
+      Object.prototype.hasOwnProperty.call(nextContext, "contactPhone")
+        ? nextContext.contactPhone
+        : nextContext.phone,
+      config.contactPhone
+    );
     var nextBrandLabel = normalizeText(nextContext.brandLabel, config.brandLabel);
     var nextCurrentUrl = normalizeUrl(nextContext.currentUrl, config.currentUrl || window.location.href);
     var nextEndpoint = normalizeEndpoint(nextContext.endpoint, config.endpoint);
@@ -1233,6 +1811,8 @@
     config.popupButtonLabel = nextPopupButtonLabel;
     config.brandLabel = nextBrandLabel;
     config.disclaimer = nextDisclaimer;
+    config.contactEmail = nextContactEmail;
+    config.contactPhone = nextContactPhone;
     config.currentUrl = nextCurrentUrl;
     config.endpoint = nextEndpoint;
 
@@ -1273,6 +1853,7 @@
     if (refs.brandText) {
       refs.brandText.textContent = config.brandLabel;
     }
+    syncHeaderContactActions();
     applyColorVariables();
     syncDisclaimerMessage();
     syncHostFavicon();
@@ -1495,6 +2076,36 @@
       return fallback;
     }
     return value.trim();
+  }
+
+  function normalizeEmail(value, fallback) {
+    var candidate = typeof value === "string" ? value.trim() : "";
+    if (!candidate) {
+      candidate = typeof fallback === "string" ? fallback.trim() : "";
+    }
+    if (!candidate) {
+      return "";
+    }
+    var normalized = candidate.replace(/^mailto:/i, "").trim();
+    if (!normalized || normalized.indexOf("@") === -1 || /\s/.test(normalized)) {
+      return "";
+    }
+    return normalized;
+  }
+
+  function normalizePhone(value, fallback) {
+    var candidate = typeof value === "string" ? value.trim() : "";
+    if (!candidate) {
+      candidate = typeof fallback === "string" ? fallback.trim() : "";
+    }
+    if (!candidate) {
+      return "";
+    }
+    var normalized = candidate.replace(/^tel:/i, "").trim();
+    if (!normalized || !/\d/.test(normalized)) {
+      return "";
+    }
+    return normalized;
   }
 
   function normalizeTheme(value, fallback) {
@@ -1735,6 +2346,7 @@
       "  --beliv-accent:" + options.accentColor + ";" +
       "  --beliv-accent-dark:" + options.accentColorDark + ";" +
       "  --beliv-accent-light:" + options.accentColorLight + ";" +
+      "  --beliv-text-accent-dark:color-mix(in srgb,var(--beliv-accent-dark) 70%,#000000 30%);" +
       "  --beliv-text:" + options.textColor + ";" +
       "  --beliv-z-index:" + options.zIndex + ";" +
       "  --beliv-popup-width:" + options.popupWidth + ";" +
@@ -1815,7 +2427,7 @@
       "  padding:18px 95px 18px 20px;" +
       "  font-size:clamp(18px,1.35vw,24px);" +
       "  line-height:1.2;" +
-      "  color:#0f2a46;" +
+      "  color:var(--beliv-text-accent-dark);" +
       "  font-weight:500;" +
       "  letter-spacing:.01em;" +
       "  background:transparent;" +
@@ -1970,7 +2582,7 @@
       "  padding:14px 16px;" +
       "  font-size:15px;" +
       "  line-height:1.4;" +
-      "  color:var(--beliv-text);" +
+      "  color:var(--beliv-text-accent-dark);" +
       "}" +
       ".beliv-launcher-input::placeholder{color:#8b9aad;}" +
       ".beliv-launcher-submit{" +
@@ -2189,6 +2801,42 @@
       "  letter-spacing:.01em;" +
       "  text-shadow:0 0 .8px rgba(203,216,233,0.44);" +
       "}" +
+      ".beliv-header-actions{" +
+      "  display:flex;" +
+      "  align-items:center;" +
+      "  gap:8px;" +
+      "  flex:0 0 auto;" +
+      "}" +
+      ".beliv-contact-link{" +
+      "  width:25px;" +
+      "  height:25px;" +
+      "  border-radius:999px;" +
+      "  display:none;" +
+      "  align-items:center;" +
+      "  justify-content:center;" +
+      "  border:1px solid rgba(255,255,255,0.76);" +
+      "  background:transparent;" +
+      "  color:#ffffff;" +
+      "  text-decoration:none;" +
+      "  box-shadow:inset 0 1px 0 rgba(255,255,255,0.2);" +
+      "  transition:transform .16s ease,background .16s ease,border-color .16s ease;" +
+      "}" +
+      ".beliv-contact-link.beliv-visible{" +
+      "  display:inline-flex;" +
+      "}" +
+      ".beliv-contact-link:hover{" +
+      "  transform:translateY(-1px);" +
+      "  background:rgba(255,255,255,0.12);" +
+      "}" +
+      ".beliv-contact-link:focus-visible{" +
+      "  outline:2px solid rgba(255,255,255,0.82);" +
+      "  outline-offset:2px;" +
+      "}" +
+      ".beliv-contact-icon{" +
+      "  font-size:13px;" +
+      "  line-height:1;" +
+      "  transform:translateY(-.5px);" +
+      "}" +
       ".beliv-close{" +
       "  border:1px solid rgba(255,255,255,0.88);" +
       "  background:rgba(255,255,255,0.98);" +
@@ -2247,11 +2895,28 @@
       "  min-width:0;" +
       "  border-radius:16px;" +
       "  padding:11px 13px;" +
-      "  font-size:14px;" +
+      "  font-size:16px;" +
       "  line-height:1.52;" +
       "  white-space:pre-wrap;" +
       "  word-break:break-word;" +
       "  overflow-wrap:anywhere;" +
+      "}" +
+      ".beliv-bubble .beliv-auto-link{" +
+      "  color:inherit;" +
+      "  text-decoration:underline;" +
+      "  text-decoration-thickness:1.25px;" +
+      "  text-underline-offset:2px;" +
+      "}" +
+      ".beliv-row-assistant .beliv-bubble .beliv-auto-link{" +
+      "  color:var(--beliv-accent-dark);" +
+      "}" +
+      ".beliv-row-assistant .beliv-bubble .beliv-auto-link:hover{" +
+      "  color:var(--beliv-accent);" +
+      "}" +
+      ".beliv-bubble .beliv-auto-link:focus-visible{" +
+      "  outline:2px solid color-mix(in srgb,var(--beliv-accent) 64%,#ffffff 36%);" +
+      "  outline-offset:2px;" +
+      "  border-radius:4px;" +
       "}" +
       ".beliv-row-user .beliv-bubble{" +
       "  background:linear-gradient(150deg,var(--beliv-accent-light) 0,var(--beliv-accent) 42%,var(--beliv-accent-dark) 100%);" +
@@ -2263,7 +2928,7 @@
       "}" +
       ".beliv-row-assistant .beliv-bubble{" +
       "  background:linear-gradient(180deg,rgba(255,255,255,0.98) 0,rgba(250,253,255,0.95) 100%);" +
-      "  color:#1a2a3d;" +
+      "  color:var(--beliv-text-accent-dark);" +
       "  border:1px solid rgba(198,216,236,0.92);" +
       "  box-shadow:0 10px 22px rgba(36,67,106,0.12),inset 0 1px 0 rgba(255,255,255,0.82);" +
       "  margin-right:auto;" +
@@ -2347,7 +3012,7 @@
       "  padding:14px 16px;" +
       "  background:linear-gradient(180deg,#ffffff 0,#f9fcff 100%);" +
       "  box-shadow:inset 0 1px 0 rgba(255,255,255,0.95);" +
-      "  color:var(--beliv-text);" +
+      "  color:var(--beliv-text-accent-dark);" +
       "  font-size:16px;" +
       "  line-height:1.35;" +
       "}" +
@@ -2501,6 +3166,9 @@
       "  color:#e5edf6;" +
       "  border-color:#30465f;" +
       "  box-shadow:0 8px 18px rgba(0,0,0,0.38),inset 0 1px 0 rgba(255,255,255,0.06);" +
+      "}" +
+      ".beliv-shell.beliv-theme-dark .beliv-row-assistant .beliv-bubble .beliv-auto-link{" +
+      "  color:var(--beliv-accent-light);" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-row-disclaimer .beliv-bubble{" +
       "  background:#3c311c;" +
@@ -2762,6 +3430,13 @@
       "  .beliv-subtitle{" +
       "    font-size:13px;" +
       "  }" +
+      "  .beliv-header-actions{" +
+      "    gap:6px;" +
+      "  }" +
+      "  .beliv-contact-link{" +
+      "    width:25px;" +
+      "    height:25px;" +
+      "  }" +
       "  .beliv-close{" +
       "    width:25px;" +
       "    height:25px;" +
@@ -2771,7 +3446,7 @@
       "  }" +
       "  .beliv-bubble{" +
       "    max-width:92%;" +
-      "    font-size:15px;" +
+      "    font-size:16px;" +
       "  }" +
       "  .beliv-chat-form{" +
       "    padding:11px max(10px,env(safe-area-inset-right)) calc(11px + env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));" +
@@ -2818,6 +3493,16 @@
       "    font-size:12px;" +
       "    line-height:1.32;" +
       "  }" +
+      "  .beliv-header-actions{" +
+      "    gap:5px;" +
+      "  }" +
+      "  .beliv-contact-link{" +
+      "    width:22px;" +
+      "    height:22px;" +
+      "  }" +
+      "  .beliv-contact-icon{" +
+      "    font-size:12px;" +
+      "  }" +
       "  .beliv-close{" +
       "    width:22px;" +
       "    height:22px;" +
@@ -2826,6 +3511,9 @@
       "  }" +
       "  .beliv-messages{" +
       "    padding:12px;" +
+      "  }" +
+      "  .beliv-bubble{" +
+      "    font-size:15px;" +
       "  }" +
       "  .beliv-chat-form{" +
       "    gap:6px;" +
