@@ -67,6 +67,7 @@ test('default config includes agital defaults', () => {
   assert.match(loaderSource, /contactEmail:\s*"primoz\.frelih@agital\.si"/);
   assert.match(loaderSource, /contactPhone:\s*"00 386 41 980 991"/);
   assert.match(loaderSource, /PLACEHOLDER_ROTATE_INTERVAL_MS\s*=\s*2000/);
+  assert.match(loaderSource, /brandLabelHtml:\s*false/);
 });
 
 test('chat links are configured for top-level navigation, not blank tab', () => {
@@ -148,4 +149,12 @@ test('placeholder sequence normalizer keeps order and removes empty values', () 
   assert.equal(result[0], 'First');
   assert.equal(result[1], 'Second');
   assert.equal(result[2], 'Third');
+});
+
+test('brand label supports optional safe html rendering and top-level links', () => {
+  assert.match(loaderSource, /function renderBrandLabel\(/);
+  assert.match(loaderSource, /function sanitizeBrandLabelHtml\(/);
+  assert.match(loaderSource, /function sanitizeBrandLabelHref\(/);
+  assert.match(loaderSource, /beliv-brand-link/);
+  assert.match(loaderSource, /clean\.setAttribute\("target", "_top"\)/);
 });

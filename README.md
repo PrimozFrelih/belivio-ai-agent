@@ -60,6 +60,7 @@ The widget reads these at prompt submit time, so you can expose them as page inp
 - `welcomeMessage`
 - `disclaimer`
 - `brandLabel`
+- `brandLabelHtml` (optional; enables safe HTML tags in `brandLabel`, e.g. links)
 - `currentUrl` (optional; defaults to the actual runtime URL)
 
 `mode="fullcenter"` renders a wide launcher inside `hostSelector`; on submit it opens a large centered popup chat with backdrop blur.
@@ -85,6 +86,7 @@ Input length is capped at 200 characters per message.
   window.BelivAIAgentConfig.welcomeMessage = "Hi! I can help you find information from Acme Help Center.";
   window.BelivAIAgentConfig.disclaimer = "This conversation is for convenience only and is not legal advice.";
   window.BelivAIAgentConfig.brandLabel = "Powered by Beliv";
+  window.BelivAIAgentConfig.brandLabelHtml = true;
   window.BelivAIAgentConfig.currentUrl = window.location.href;
 
   // Optional immediate UI/layout refresh
@@ -105,6 +107,7 @@ Input length is capped at 200 characters per message.
     welcomeMessage: window.BelivAIAgentConfig.welcomeMessage,
     disclaimer: window.BelivAIAgentConfig.disclaimer,
     brandLabel: window.BelivAIAgentConfig.brandLabel,
+    brandLabelHtml: window.BelivAIAgentConfig.brandLabelHtml,
     currentUrl: window.BelivAIAgentConfig.currentUrl
   });
 </script>
@@ -235,6 +238,7 @@ git push origin v1.0.0
 - `popupHeight`
 - `zIndex`
 - `brandLabel`
+- `brandLabelHtml` (optional boolean; supports safe tags: `a`, `strong`, `em`, `b`, `i`, `u`, `span`, `small`, `br`)
 - `endpoint`
 
 ## Webhook request body

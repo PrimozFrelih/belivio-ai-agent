@@ -40,6 +40,7 @@
     popupWidth: 420,
     popupHeight: 620,
     brandLabel: "Powered by Beliv",
+    brandLabelHtml: false,
     endpoint: DEFAULT_ENDPOINT
   };
 
@@ -116,6 +117,12 @@
     popupWidth: normalizeSize(runtimeConfig.popupWidth, "420px", 320),
     popupHeight: normalizeSize(runtimeConfig.popupHeight, "620px", 360),
     brandLabel: normalizeText(runtimeConfig.brandLabel, DEFAULT_CONFIG.brandLabel),
+    brandLabelHtml: normalizeBoolean(
+      Object.prototype.hasOwnProperty.call(runtimeConfig, "brandLabelHtml")
+        ? runtimeConfig.brandLabelHtml
+        : runtimeConfig.brandLabelAllowHtml,
+      DEFAULT_CONFIG.brandLabelHtml
+    ),
     endpoint: normalizeEndpoint(runtimeConfig.endpoint, DEFAULT_ENDPOINT)
   };
   if (autoSubtitle) {
@@ -251,7 +258,7 @@
 
     refs.titleText.textContent = config.title;
     refs.subtitleText.textContent = config.subtitle;
-    refs.brandText.textContent = config.brandLabel;
+    renderBrandLabel();
     refs.launcherInput.placeholder = config.placeholder;
     refs.chatInput.placeholder = config.popupPlaceholder;
     refs.launcherInput.maxLength = MAX_INPUT_LENGTH;
@@ -410,6 +417,120 @@
     }
     refs.chatButton.innerHTML = '<span class="beliv-chat-submit-icon" aria-hidden="true"></span>';
     refs.chatButton.setAttribute("aria-label", config.popupButtonLabel);
+  }
+
+  function renderBrandLabel() {
+    if (!refs.brandText) {
+      return;
+    }
+    if (!config.brandLabelHtml) {
+      refs.brandText.textContent = config.brandLabel;
+      return;
+    }
+    refs.brandText.innerHTML = sanitizeBrandLabelHtml(config.brandLabel);
+  }
+
+  function sanitizeBrandLabelHtml(value) {
+    var source = typeof value === "string" ? value : "";
+    if (!source) {
+      return "";
+    }
+
+    var sourceRoot = document.createElement("div");
+    sourceRoot.innerHTML = source;
+    var outputRoot = document.createElement("div");
+    var i;
+    for (i = 0; i < sourceRoot.childNodes.length; i += 1) {
+      appendSanitizedBrandNode(outputRoot, sourceRoot.childNodes[i]);
+    }
+    return outputRoot.innerHTML;
+  }
+
+  function appendSanitizedBrandNode(parent, node) {
+    if (!parent || !node) {
+      return;
+    }
+    if (node.nodeType === 3) {
+      parent.appendChild(document.createTextNode(node.nodeValue || ""));
+      return;
+    }
+    if (node.nodeType !== 1) {
+      return;
+    }
+
+    var tagName = String(node.tagName || "").toUpperCase();
+    var allowed = {
+      A: true,
+      BR: true,
+      STRONG: true,
+      EM: true,
+      B: true,
+      I: true,
+      U: true,
+      SPAN: true,
+      SMALL: true
+    };
+    if (!allowed[tagName]) {
+      var fallbackChildren = node.childNodes || [];
+      var x;
+      for (x = 0; x < fallbackChildren.length; x += 1) {
+        appendSanitizedBrandNode(parent, fallbackChildren[x]);
+      }
+      return;
+    }
+
+    var clean = document.createElement(tagName.toLowerCase());
+    if (tagName === "A") {
+      var href = sanitizeBrandLabelHref(node.getAttribute("href"));
+      if (href) {
+        clean.setAttribute("href", href);
+        clean.setAttribute("target", "_top");
+        clean.setAttribute("rel", "noopener noreferrer");
+        clean.setAttribute("class", "beliv-brand-link");
+      }
+      var title = normalizeOptionalText(node.getAttribute("title"), "");
+      if (title) {
+        clean.setAttribute("title", title);
+      }
+    }
+
+    var children = node.childNodes || [];
+    var i;
+    for (i = 0; i < children.length; i += 1) {
+      appendSanitizedBrandNode(clean, children[i]);
+    }
+
+    if (tagName === "A" && !clean.getAttribute("href")) {
+      while (clean.firstChild) {
+        parent.appendChild(clean.firstChild);
+      }
+      return;
+    }
+
+    parent.appendChild(clean);
+  }
+
+  function sanitizeBrandLabelHref(value) {
+    var candidate = normalizeOptionalText(value, "");
+    if (!candidate) {
+      return "";
+    }
+
+    if (/^[a-z0-9.-]+\.[a-z]{2,}(\/.*)?$/i.test(candidate)) {
+      candidate = "https://" + candidate;
+    }
+    if (/^javascript:/i.test(candidate) || /^data:/i.test(candidate) || /^vbscript:/i.test(candidate)) {
+      return "";
+    }
+
+    if (/^mailto:/i.test(candidate)) {
+      return buildMailtoHref(candidate);
+    }
+    if (/^tel:/i.test(candidate)) {
+      return buildTelHref(candidate);
+    }
+
+    return normalizeAutoLinkUrl(candidate);
   }
 
   function stopLauncherPlaceholderRotation() {
@@ -1739,6 +1860,14 @@
           if (Object.prototype.hasOwnProperty.call(nextContext, "brandLabel")) {
             window.BelivAIAgentConfig.brandLabel = nextContext.brandLabel;
           }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "brandLabelHtml")) {
+            window.BelivAIAgentConfig.brandLabelHtml = nextContext.brandLabelHtml;
+            window.BelivAIAgentConfig.brandLabelAllowHtml = nextContext.brandLabelHtml;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "brandLabelAllowHtml")) {
+            window.BelivAIAgentConfig.brandLabelHtml = nextContext.brandLabelAllowHtml;
+            window.BelivAIAgentConfig.brandLabelAllowHtml = nextContext.brandLabelAllowHtml;
+          }
           if (Object.prototype.hasOwnProperty.call(nextContext, "currentUrl")) {
             window.BelivAIAgentConfig.currentUrl = nextContext.currentUrl;
           }
@@ -1805,6 +1934,10 @@
       contactEmail: liveConfig.contactEmail || liveConfig.email,
       contactPhone: liveConfig.contactPhone || liveConfig.phone,
       brandLabel: liveConfig.brandLabel,
+      brandLabelHtml:
+        Object.prototype.hasOwnProperty.call(liveConfig, "brandLabelHtml")
+          ? liveConfig.brandLabelHtml
+          : liveConfig.brandLabelAllowHtml,
       currentUrl: liveConfig.currentUrl,
       endpoint: liveConfig.endpoint
     };
@@ -1893,6 +2026,12 @@
       config.contactPhone
     );
     var nextBrandLabel = normalizeText(nextContext.brandLabel, config.brandLabel);
+    var nextBrandLabelHtml = normalizeBoolean(
+      Object.prototype.hasOwnProperty.call(nextContext, "brandLabelHtml")
+        ? nextContext.brandLabelHtml
+        : nextContext.brandLabelAllowHtml,
+      config.brandLabelHtml
+    );
     var nextCurrentUrl = normalizeUrl(nextContext.currentUrl, config.currentUrl || window.location.href);
     var nextEndpoint = normalizeEndpoint(nextContext.endpoint, config.endpoint);
     var nextDomainFallback =
@@ -1918,6 +2057,7 @@
     config.launcherButtonLabel = nextLauncherButtonLabel;
     config.popupButtonLabel = nextPopupButtonLabel;
     config.brandLabel = nextBrandLabel;
+    config.brandLabelHtml = nextBrandLabelHtml;
     config.disclaimer = nextDisclaimer;
     config.contactEmail = nextContactEmail;
     config.contactPhone = nextContactPhone;
@@ -1957,7 +2097,7 @@
       }
     }
     if (refs.brandText) {
-      refs.brandText.textContent = config.brandLabel;
+      renderBrandLabel();
     }
     syncHeaderContactActions();
     applyColorVariables();
@@ -2182,6 +2322,25 @@
       return fallback;
     }
     return value.trim();
+  }
+
+  function normalizeBoolean(value, fallback) {
+    if (typeof value === "boolean") {
+      return value;
+    }
+    if (typeof value === "number") {
+      return value !== 0;
+    }
+    if (typeof value === "string") {
+      var normalized = value.trim().toLowerCase();
+      if (normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "on") {
+        return true;
+      }
+      if (normalized === "false" || normalized === "0" || normalized === "no" || normalized === "off") {
+        return false;
+      }
+    }
+    return !!fallback;
   }
 
   function normalizePlaceholderSequence(value, fallbackList) {
@@ -3221,6 +3380,19 @@
       "  font-weight:600;" +
       "  text-align:center;" +
       "}" +
+      ".beliv-brand .beliv-brand-link{" +
+      "  color:var(--beliv-accent-dark);" +
+      "  text-decoration:underline;" +
+      "  text-underline-offset:2px;" +
+      "}" +
+      ".beliv-brand .beliv-brand-link:hover{" +
+      "  color:var(--beliv-accent);" +
+      "}" +
+      ".beliv-brand .beliv-brand-link:focus-visible{" +
+      "  outline:2px solid color-mix(in srgb,var(--beliv-accent) 65%,#ffffff 35%);" +
+      "  outline-offset:2px;" +
+      "  border-radius:3px;" +
+      "}" +
       ".beliv-dots{" +
       "  display:inline-flex;" +
       "  align-items:center;" +
@@ -3355,6 +3527,12 @@
       "  background:#0d1827;" +
       "  border-top-color:#33495f;" +
       "  color:#9bb1c6;" +
+      "}" +
+      ".beliv-shell.beliv-theme-dark .beliv-brand .beliv-brand-link{" +
+      "  color:#c6def4;" +
+      "}" +
+      ".beliv-shell.beliv-theme-dark .beliv-brand .beliv-brand-link:hover{" +
+      "  color:#e7f1fc;" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-dots i{" +
       "  background:#9eb3c6;" +

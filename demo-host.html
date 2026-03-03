@@ -501,6 +501,13 @@
               <input id="cfgBrandLabel" type="text" value="Powered by Beliv" />
             </div>
             <div class="field">
+              <label for="cfgBrandLabelHtml">Brand Label HTML</label>
+              <select id="cfgBrandLabelHtml">
+                <option value="false">off</option>
+                <option value="true" selected>on</option>
+              </select>
+            </div>
+            <div class="field">
               <label for="cfgSiteName">Site Name</label>
               <input id="cfgSiteName" type="text" value="Beliv Demo Docs" />
             </div>
@@ -615,6 +622,7 @@
         contactEmail: "primoz.frelih@agital.si",
         contactPhone: "00 386 41 980 991",
         brandLabel: "Powered by Beliv",
+        brandLabelHtml: true,
         endpoint: LIVE_ENDPOINT
       };
     </script>
@@ -645,6 +653,17 @@
         function readValue(id) {
           var element = document.getElementById(id);
           return element ? (element.value || "").trim() : "";
+        }
+
+        function readBooleanValue(id, fallback) {
+          var raw = readValue(id).toLowerCase();
+          if (raw === "true" || raw === "1" || raw === "on" || raw === "yes") {
+            return true;
+          }
+          if (raw === "false" || raw === "0" || raw === "off" || raw === "no") {
+            return false;
+          }
+          return !!fallback;
         }
 
         function buildPlaceholderSequence(sequence) {
@@ -812,6 +831,7 @@
             contactEmail: readValue("cfgContactEmail"),
             contactPhone: readValue("cfgContactPhone"),
             brandLabel: readValue("cfgBrandLabel"),
+            brandLabelHtml: readBooleanValue("cfgBrandLabelHtml", true),
             siteName: readValue("cfgSiteName"),
             domain: readValue("cfgDomain"),
             mainColor: readValue("cfgMainColor"),
@@ -852,6 +872,7 @@
             contactEmail: config.contactEmail,
             contactPhone: config.contactPhone,
             brandLabel: config.brandLabel,
+            brandLabelHtml: config.brandLabelHtml,
             endpoint: config.endpoint
           };
           var snippetConfigSerialized = JSON.stringify(snippetConfig, null, 2).replace(
@@ -901,6 +922,7 @@
               contactEmail: config.contactEmail,
               contactPhone: config.contactPhone,
               brandLabel: config.brandLabel,
+              brandLabelHtml: config.brandLabelHtml,
               currentUrl: config.currentUrl,
               endpoint: config.endpoint
             });
