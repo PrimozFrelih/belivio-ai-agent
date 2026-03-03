@@ -146,6 +146,78 @@
         gap: 8px;
       }
 
+      .placeholder-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .placeholder-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid #bfd2df;
+        border-radius: 11px;
+        background: #ffffff;
+        padding: 5px 8px;
+        transition: border-color 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
+      }
+
+      .placeholder-item.dragging {
+        opacity: 0.5;
+      }
+
+      .placeholder-item.over {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.14);
+      }
+
+      .placeholder-item-handle {
+        flex: 0 0 auto;
+        width: 26px;
+        height: 30px;
+        border-radius: 8px;
+        border: 1px solid #d2deea;
+        background: #f3f7fc;
+        color: #6a8096;
+        font-size: 17px;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: grab;
+        user-select: none;
+      }
+
+      .placeholder-item-input {
+        flex: 1;
+        min-width: 0;
+        border: 0;
+        background: transparent;
+        color: #173046;
+        font-size: 14px;
+        height: 30px;
+        outline: none;
+      }
+
+      .placeholder-item-remove {
+        flex: 0 0 auto;
+        width: 30px;
+        height: 30px;
+        border: 0;
+        border-radius: 8px;
+        background: #f3f7fc;
+        color: #60788f;
+        font-size: 18px;
+        line-height: 1;
+        cursor: pointer;
+      }
+
+      .placeholder-help {
+        margin: 0;
+        font-size: 12px;
+        color: #657f97;
+      }
+
       .placeholder-add input {
         flex: 1;
       }
@@ -331,6 +403,9 @@
           min-height: 86px;
           height: auto;
         }
+        .placeholder-item-input {
+          font-size: 13px;
+        }
         .copy-btn {
           width: 100%;
           min-height: 38px;
@@ -377,9 +452,8 @@
             </div>
             <div class="field field-wide">
               <label for="cfgPlaceholderSequence">Launcher Placeholder Rotation (Order)</label>
-              <textarea id="cfgPlaceholderSequence">What service do you need?
-Ask anything about this website...
-Need help with SEO optimization?</textarea>
+              <div id="cfgPlaceholderSequence" class="placeholder-list" aria-live="polite"></div>
+              <p class="placeholder-help">Drag rows to reorder. First item is shown first, then rotation follows the same order.</p>
               <div class="placeholder-add">
                 <input id="cfgPlaceholderAdd" type="text" placeholder="Add new placeholder text..." />
                 <button id="cfgPlaceholderAddBtn" type="button">+ Add</button>
@@ -551,9 +625,10 @@ Need help with SEO optimization?</textarea>
         var currentUrlInput = document.getElementById("cfgCurrentUrl");
         var endpointModeInput = document.getElementById("cfgEndpointMode");
         var placeholderInput = document.getElementById("cfgPlaceholder");
-        var placeholderSequenceInput = document.getElementById("cfgPlaceholderSequence");
+        var placeholderListRoot = document.getElementById("cfgPlaceholderSequence");
         var placeholderAddInput = document.getElementById("cfgPlaceholderAdd");
         var placeholderAddButton = document.getElementById("cfgPlaceholderAddBtn");
+        var placeholderDragIndex = -1;
 
         function syncRuntimeCurrentUrl() {
           var runtimeUrl = window.location.href;
@@ -567,19 +642,6 @@ Need help with SEO optimization?</textarea>
         function readValue(id) {
           var element = document.getElementById(id);
           return element ? (element.value || "").trim() : "";
-        }
-
-        function readMultilineValues(id) {
-          var element = document.getElementById(id);
-          if (!element || typeof element.value !== "string") {
-            return [];
-          }
-          return element.value
-            .split(/\r?\n/)
-            .map(function (item) {
-              return item.trim();
-            })
-            .filter(Boolean);
         }
 
         function buildPlaceholderSequence(sequence) {
@@ -596,9 +658,137 @@ Need help with SEO optimization?</textarea>
           return ordered;
         }
 
+        function readPlaceholderItemsFromDom() {
+          if (!placeholderListRoot) {
+            return [];
+          }
+          var nodes = placeholderListRoot.querySelectorAll(".placeholder-item-input");
+          var values = [];
+          var i;
+          for (i = 0; i < nodes.length; i += 1) {
+            values.push((nodes[i].value || "").trim());
+          }
+          return values;
+        }
+
+        function clearPlaceholderDropMarkers() {
+          if (!placeholderListRoot) {
+            return;
+          }
+          var rows = placeholderListRoot.querySelectorAll(".placeholder-item");
+          var i;
+          for (i = 0; i < rows.length; i += 1) {
+            rows[i].classList.remove("over");
+            rows[i].classList.remove("dragging");
+          }
+        }
+
+        function renderPlaceholderList(sequence) {
+          if (!placeholderListRoot) {
+            return;
+          }
+
+          var items = buildPlaceholderSequence(sequence);
+          if (!items.length) {
+            var fallback = placeholderInput ? (placeholderInput.value || "").trim() : "";
+            if (fallback) {
+              items = [fallback];
+            }
+          }
+          if (!items.length) {
+            items = ["What service do you need?"];
+          }
+          if (placeholderInput) {
+            placeholderInput.value = items[0];
+          }
+
+          placeholderListRoot.innerHTML = "";
+          items.forEach(function (item, index) {
+            var row = document.createElement("div");
+            row.className = "placeholder-item";
+            row.draggable = true;
+            row.setAttribute("data-index", String(index));
+
+            var handle = document.createElement("span");
+            handle.className = "placeholder-item-handle";
+            handle.setAttribute("aria-hidden", "true");
+            handle.textContent = "::";
+
+            var input = document.createElement("input");
+            input.className = "placeholder-item-input";
+            input.type = "text";
+            input.value = item;
+            input.setAttribute("aria-label", "Placeholder item " + (index + 1));
+
+            var removeButton = document.createElement("button");
+            removeButton.type = "button";
+            removeButton.className = "placeholder-item-remove";
+            removeButton.setAttribute("aria-label", "Remove placeholder");
+            removeButton.textContent = "x";
+            removeButton.addEventListener("click", function () {
+              var current = readPlaceholderItemsFromDom();
+              current.splice(index, 1);
+              renderPlaceholderList(current);
+              applyShowcaseConfig();
+            });
+
+            row.addEventListener("dragstart", function (event) {
+              placeholderDragIndex = index;
+              clearPlaceholderDropMarkers();
+              row.classList.add("dragging");
+              if (event.dataTransfer) {
+                event.dataTransfer.effectAllowed = "move";
+                event.dataTransfer.setData("text/plain", String(index));
+              }
+            });
+            row.addEventListener("dragover", function (event) {
+              if (placeholderDragIndex === index) {
+                return;
+              }
+              event.preventDefault();
+              row.classList.add("over");
+              if (event.dataTransfer) {
+                event.dataTransfer.dropEffect = "move";
+              }
+            });
+            row.addEventListener("dragleave", function () {
+              row.classList.remove("over");
+            });
+            row.addEventListener("drop", function (event) {
+              event.preventDefault();
+              row.classList.remove("over");
+              if (placeholderDragIndex < 0 || placeholderDragIndex === index) {
+                return;
+              }
+              var current = readPlaceholderItemsFromDom();
+              var moved = current.splice(placeholderDragIndex, 1)[0];
+              current.splice(index, 0, moved);
+              renderPlaceholderList(current);
+              applyShowcaseConfig();
+            });
+            row.addEventListener("dragend", function () {
+              placeholderDragIndex = -1;
+              clearPlaceholderDropMarkers();
+            });
+
+            row.appendChild(handle);
+            row.appendChild(input);
+            row.appendChild(removeButton);
+            placeholderListRoot.appendChild(row);
+          });
+        }
+
         function readConfigFromForm() {
           var placeholder = readValue("cfgPlaceholder");
-          var placeholderSequence = buildPlaceholderSequence(readMultilineValues("cfgPlaceholderSequence"));
+          var placeholderItems = readPlaceholderItemsFromDom();
+          if (placeholder) {
+            if (placeholderItems.length) {
+              placeholderItems[0] = placeholder;
+            } else {
+              placeholderItems = [placeholder];
+            }
+          }
+          var placeholderSequence = buildPlaceholderSequence(placeholderItems);
           if (!placeholderSequence.length && placeholder) {
             placeholderSequence = [placeholder];
           }
@@ -679,9 +869,6 @@ Need help with SEO optimization?</textarea>
           var config = readConfigFromForm();
           config.currentUrl = runtimeUrl;
           config.endpoint = endpointFromMode(config.endpointMode);
-          if (placeholderInput && config.placeholder) {
-            placeholderInput.value = config.placeholder;
-          }
           if (endpointModeInput) {
             endpointModeInput.value = config.endpointMode;
           }
@@ -720,18 +907,50 @@ Need help with SEO optimization?</textarea>
         }
 
         function addPlaceholderLine() {
-          if (!placeholderSequenceInput || !placeholderAddInput) {
+          if (!placeholderListRoot || !placeholderAddInput) {
             return;
           }
           var nextValue = (placeholderAddInput.value || "").trim();
           if (!nextValue) {
             return;
           }
-          var lines = readMultilineValues("cfgPlaceholderSequence");
-          lines.push(nextValue);
-          placeholderSequenceInput.value = lines.join("\n");
+          var current = readPlaceholderItemsFromDom();
+          current.push(nextValue);
+          renderPlaceholderList(current);
           placeholderAddInput.value = "";
           applyShowcaseConfig();
+        }
+
+        function syncFirstPlaceholderItem() {
+          if (!placeholderInput || !placeholderListRoot) {
+            return;
+          }
+          var first = (placeholderInput.value || "").trim();
+          var current = readPlaceholderItemsFromDom();
+          if (first) {
+            if (current.length) {
+              current[0] = first;
+            } else {
+              current = [first];
+            }
+          } else if (current.length) {
+            current.shift();
+          }
+          renderPlaceholderList(current);
+          applyShowcaseConfig();
+        }
+
+        function seedPlaceholderList() {
+          var initial = window.BelivAIAgentConfig
+            ? window.BelivAIAgentConfig.placeholderSequence
+            : [];
+          if (typeof initial === "string") {
+            initial = initial.split(/\r?\n|\|/);
+          }
+          if (!Array.isArray(initial)) {
+            initial = [readValue("cfgPlaceholder")];
+          }
+          renderPlaceholderList(initial);
         }
 
         async function copySnippet() {
@@ -749,6 +968,9 @@ Need help with SEO optimization?</textarea>
         if (placeholderAddButton) {
           placeholderAddButton.addEventListener("click", addPlaceholderLine);
         }
+        if (placeholderInput) {
+          placeholderInput.addEventListener("change", syncFirstPlaceholderItem);
+        }
         if (placeholderAddInput) {
           placeholderAddInput.addEventListener("keydown", function (event) {
             if (event.key === "Enter") {
@@ -758,6 +980,7 @@ Need help with SEO optimization?</textarea>
           });
         }
 
+        seedPlaceholderList();
         syncRuntimeCurrentUrl();
         applyShowcaseConfig();
       })();
