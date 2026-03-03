@@ -1,0 +1,42 @@
+name: Test Widget
+
+on:
+  pull_request:
+    paths:
+      - ai-agent-chat-loader.js
+      - demo-host.html
+      - README.md
+      - tests/**
+      - package.json
+      - package-lock.json
+      - .github/workflows/test-widget.yml
+  push:
+    branches:
+      - main
+    paths:
+      - ai-agent-chat-loader.js
+      - demo-host.html
+      - README.md
+      - tests/**
+      - package.json
+      - package-lock.json
+      - .github/workflows/test-widget.yml
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Run tests
+        run: |
+          npm ci
+          npm test

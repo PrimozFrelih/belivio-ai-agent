@@ -10,6 +10,7 @@
   var DEFAULT_ENDPOINT = "https://app.beliv.io/webhook/ai-agent";
   var SESSION_STORAGE_KEY = "beliv_ai_agent_session_id";
   var MAX_INPUT_LENGTH = 200;
+  var PLACEHOLDER_ROTATE_INTERVAL_MS = 2000;
   var DEFAULT_CONFIG = {
     title: "Beliv.io website agent Widget",
     subtitle: "Ask anything about this website.",
@@ -23,6 +24,7 @@
     currentUrl: "",
     placeholder: "Ask AI about this page...",
     launcherPlaceholder: "Ask AI about this page...",
+    placeholderSequence: [],
     popupPlaceholder: "Type your follow-up...",
     launcherButtonLabel: "Ask",
     popupButtonLabel: "Send",
@@ -54,6 +56,16 @@
     runtimeConfig.placeholder,
     normalizeText(runtimeConfig.launcherPlaceholder, DEFAULT_CONFIG.launcherPlaceholder)
   );
+  var resolvedLauncherPlaceholderSequence = normalizePlaceholderSequence(
+    Object.prototype.hasOwnProperty.call(runtimeConfig, "placeholderSequence")
+      ? runtimeConfig.placeholderSequence
+      : runtimeConfig.placeholderList,
+    [resolvedLauncherPlaceholder]
+  );
+  if (!resolvedLauncherPlaceholderSequence.length) {
+    resolvedLauncherPlaceholderSequence = [resolvedLauncherPlaceholder];
+  }
+  var resolvedLauncherPlaceholderPrimary = resolvedLauncherPlaceholderSequence[0];
   var resolvedMainColor = normalizeColor(runtimeConfig.mainColor, "");
   var resolvedAccentColor = normalizeColor(
     resolvedMainColor || runtimeConfig.accentColor,
@@ -82,8 +94,9 @@
     hostSelector: normalizeSelector(runtimeConfig.hostSelector),
     hostPlacement: normalizeHostPlacement(runtimeConfig.hostPlacement, DEFAULT_CONFIG.hostPlacement),
     currentUrl: normalizedCurrentUrl,
-    placeholder: resolvedLauncherPlaceholder,
-    launcherPlaceholder: resolvedLauncherPlaceholder,
+    placeholder: resolvedLauncherPlaceholderPrimary,
+    launcherPlaceholder: resolvedLauncherPlaceholderPrimary,
+    placeholderSequence: resolvedLauncherPlaceholderSequence,
     popupPlaceholder: normalizeText(runtimeConfig.popupPlaceholder, DEFAULT_CONFIG.popupPlaceholder),
     launcherButtonLabel: normalizeText(
       runtimeConfig.launcherButtonLabel,
@@ -121,6 +134,8 @@
     messages: []
   };
   var chatOpenFlashTimer = null;
+  var placeholderRotateTimer = null;
+  var placeholderRotateIndex = 0;
 
   var refs = {
     hostRoot: null,
@@ -246,6 +261,7 @@
     renderChatButtonIdle();
     syncHostFavicon();
     syncHeaderContactActions();
+    syncLauncherPlaceholderRotation(true);
 
     bindEvents(root);
     bindPublicApi();
@@ -394,6 +410,46 @@
     }
     refs.chatButton.innerHTML = '<span class="beliv-chat-submit-icon" aria-hidden="true"></span>';
     refs.chatButton.setAttribute("aria-label", config.popupButtonLabel);
+  }
+
+  function stopLauncherPlaceholderRotation() {
+    if (placeholderRotateTimer) {
+      window.clearInterval(placeholderRotateTimer);
+      placeholderRotateTimer = null;
+    }
+  }
+
+  function syncLauncherPlaceholderRotation(resetIndex) {
+    var list = normalizePlaceholderSequence(config.placeholderSequence, [config.placeholder]);
+    if (!list.length) {
+      list = [DEFAULT_CONFIG.placeholder];
+    }
+
+    config.placeholderSequence = list;
+    config.placeholder = list[0];
+    config.launcherPlaceholder = list[0];
+
+    stopLauncherPlaceholderRotation();
+    if (!refs.launcherInput) {
+      return;
+    }
+
+    if (resetIndex || placeholderRotateIndex >= list.length || placeholderRotateIndex < 0) {
+      placeholderRotateIndex = 0;
+    }
+    refs.launcherInput.placeholder = list[placeholderRotateIndex];
+
+    if (list.length < 2) {
+      return;
+    }
+
+    placeholderRotateTimer = window.setInterval(function () {
+      if (!refs.launcherInput) {
+        return;
+      }
+      placeholderRotateIndex = (placeholderRotateIndex + 1) % list.length;
+      refs.launcherInput.placeholder = list[placeholderRotateIndex];
+    }, PLACEHOLDER_ROTATE_INTERVAL_MS);
   }
 
   function syncHeaderContactActions() {
@@ -1620,6 +1676,14 @@
               window.BelivAIAgentConfig.placeholder = nextContext.launcherPlaceholder;
             }
           }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "placeholderSequence")) {
+            window.BelivAIAgentConfig.placeholderSequence = nextContext.placeholderSequence;
+            window.BelivAIAgentConfig.placeholderList = nextContext.placeholderSequence;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "placeholderList")) {
+            window.BelivAIAgentConfig.placeholderSequence = nextContext.placeholderList;
+            window.BelivAIAgentConfig.placeholderList = nextContext.placeholderList;
+          }
           if (Object.prototype.hasOwnProperty.call(nextContext, "popupPlaceholder")) {
             window.BelivAIAgentConfig.popupPlaceholder = nextContext.popupPlaceholder;
           }
@@ -1711,6 +1775,7 @@
       hostPlacement: liveConfig.hostPlacement,
       placeholder: liveConfig.placeholder,
       launcherPlaceholder: liveConfig.launcherPlaceholder,
+      placeholderSequence: liveConfig.placeholderSequence || liveConfig.placeholderList,
       popupPlaceholder: liveConfig.popupPlaceholder,
       launcherButtonLabel: liveConfig.launcherButtonLabel,
       popupButtonLabel: liveConfig.popupButtonLabel,
@@ -1759,10 +1824,33 @@
     var nextMode = normalizeMode(nextContext.mode, config.mode);
     var nextHostSelector = normalizeSelector(nextContext.hostSelector, config.hostSelector);
     var nextHostPlacement = normalizeHostPlacement(nextContext.hostPlacement, config.hostPlacement);
+    var hasPlaceholderOverride = Object.prototype.hasOwnProperty.call(nextContext, "placeholder");
+    var hasLauncherPlaceholderOverride = Object.prototype.hasOwnProperty.call(
+      nextContext,
+      "launcherPlaceholder"
+    );
+    var hasPlaceholderSequenceOverride =
+      Object.prototype.hasOwnProperty.call(nextContext, "placeholderSequence") ||
+      Object.prototype.hasOwnProperty.call(nextContext, "placeholderList");
     var nextLauncherPlaceholder = normalizeText(
       nextContext.placeholder,
       normalizeText(nextContext.launcherPlaceholder, config.placeholder)
     );
+    var nextLauncherPlaceholderSequence = normalizePlaceholderSequence(
+      hasPlaceholderSequenceOverride
+        ? Object.prototype.hasOwnProperty.call(nextContext, "placeholderSequence")
+          ? nextContext.placeholderSequence
+          : nextContext.placeholderList
+        : config.placeholderSequence,
+      [nextLauncherPlaceholder]
+    );
+    if ((hasPlaceholderOverride || hasLauncherPlaceholderOverride) && !hasPlaceholderSequenceOverride) {
+      nextLauncherPlaceholderSequence = [nextLauncherPlaceholder];
+    }
+    if (!nextLauncherPlaceholderSequence.length) {
+      nextLauncherPlaceholderSequence = [nextLauncherPlaceholder];
+    }
+    nextLauncherPlaceholder = nextLauncherPlaceholderSequence[0];
     var nextPopupPlaceholder = normalizeText(nextContext.popupPlaceholder, config.popupPlaceholder);
     var nextLauncherButtonLabel = normalizeText(
       nextContext.launcherButtonLabel,
@@ -1804,6 +1892,7 @@
     config.hostPlacement = nextHostPlacement;
     config.placeholder = nextLauncherPlaceholder;
     config.launcherPlaceholder = nextLauncherPlaceholder;
+    config.placeholderSequence = nextLauncherPlaceholderSequence;
     config.popupPlaceholder = nextPopupPlaceholder;
     config.launcherButtonLabel = nextLauncherButtonLabel;
     config.popupButtonLabel = nextPopupButtonLabel;
@@ -1831,9 +1920,7 @@
     if (refs.subtitleText) {
       refs.subtitleText.textContent = config.subtitle;
     }
-    if (refs.launcherInput) {
-      refs.launcherInput.placeholder = config.placeholder;
-    }
+    syncLauncherPlaceholderRotation(true);
     if (refs.chatInput) {
       refs.chatInput.placeholder = config.popupPlaceholder;
     }
@@ -2074,6 +2161,44 @@
       return fallback;
     }
     return value.trim();
+  }
+
+  function normalizePlaceholderSequence(value, fallbackList) {
+    var source = value;
+    if (typeof source === "string") {
+      source = source.split(/\r?\n|\|/);
+    }
+    if (!Array.isArray(source)) {
+      source = Array.isArray(fallbackList) ? fallbackList : [];
+    }
+
+    var list = [];
+    var i;
+    for (i = 0; i < source.length; i += 1) {
+      if (typeof source[i] !== "string") {
+        continue;
+      }
+      var item = source[i].trim();
+      if (!item) {
+        continue;
+      }
+      list.push(item);
+    }
+
+    if (!list.length && Array.isArray(fallbackList)) {
+      for (i = 0; i < fallbackList.length; i += 1) {
+        if (typeof fallbackList[i] !== "string") {
+          continue;
+        }
+        var fallbackItem = fallbackList[i].trim();
+        if (!fallbackItem) {
+          continue;
+        }
+        list.push(fallbackItem);
+      }
+    }
+
+    return list;
   }
 
   function normalizeEmail(value, fallback) {

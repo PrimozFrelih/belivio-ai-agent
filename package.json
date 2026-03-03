@@ -1,0 +1,22 @@
+{
+  "name": "saas-ai-agent",
+  "version": "1.0.0",
+  "description": "Embeddable JavaScript widget that adds: - a docked input bar (`text field + right-side button`) on the host site - a popup chat for continued conversation - prompt delivery to `https://app.beliv.io/webhook/ai-agent` - live showcase: [https://widget.beliv.io/web-ai-agent/](https://widget.beliv.io/web-ai-agent/)",
+  "main": "ai-agent-chat-loader.js",
+  "scripts": {
+    "test": "node --test",
+    "test:backend": "RUN_BACKEND_TESTS=1 node --test tests/backend-contract.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PrimozFrelih/belivio-ai-agent.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/PrimozFrelih/belivio-ai-agent/issues"
+  },
+  "homepage": "https://github.com/PrimozFrelih/belivio-ai-agent#readme"
+}

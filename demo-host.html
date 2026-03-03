@@ -115,7 +115,8 @@
       }
 
       .field input,
-      .field select {
+      .field select,
+      .field textarea {
         height: 42px;
         border: 1px solid #bfd2df;
         border-radius: 11px;
@@ -126,10 +127,38 @@
         outline: none;
       }
 
+      .field textarea {
+        min-height: 92px;
+        height: auto;
+        padding: 10px 12px;
+        resize: vertical;
+      }
+
       .field input:focus,
-      .field select:focus {
+      .field select:focus,
+      .field textarea:focus {
         border-color: var(--accent);
         box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.14);
+      }
+
+      .placeholder-add {
+        display: flex;
+        gap: 8px;
+      }
+
+      .placeholder-add input {
+        flex: 1;
+      }
+
+      .placeholder-add button {
+        border: 0;
+        border-radius: 10px;
+        height: 42px;
+        padding: 0 12px;
+        color: #ffffff;
+        font-weight: 800;
+        cursor: pointer;
+        background: linear-gradient(140deg, #1877f2, #1663d8);
       }
 
       .preview-column {
@@ -293,9 +322,14 @@
 
       @media (max-width: 480px) {
         .field input,
-        .field select {
+        .field select,
+        .field textarea {
           height: 40px;
           font-size: 13px;
+        }
+        .field textarea {
+          min-height: 86px;
+          height: auto;
         }
         .copy-btn {
           width: 100%;
@@ -340,6 +374,16 @@
             <div class="field field-wide">
               <label for="cfgPlaceholder">Launcher Placeholder</label>
               <input id="cfgPlaceholder" type="text" value="What service do you need?" />
+            </div>
+            <div class="field field-wide">
+              <label for="cfgPlaceholderSequence">Launcher Placeholder Rotation (Order)</label>
+              <textarea id="cfgPlaceholderSequence">What service do you need?
+Ask anything about this website...
+Need help with SEO optimization?</textarea>
+              <div class="placeholder-add">
+                <input id="cfgPlaceholderAdd" type="text" placeholder="Add new placeholder text..." />
+                <button id="cfgPlaceholderAddBtn" type="button">+ Add</button>
+              </div>
             </div>
             <div class="field field-wide">
               <label for="cfgPopupPlaceholder">Popup Placeholder</label>
@@ -481,6 +525,11 @@
         currentUrl: runtimeCurrentUrl,
         placeholder: "What service do you need?",
         launcherPlaceholder: "Ask anything about this website...",
+        placeholderSequence: [
+          "What service do you need?",
+          "Ask anything about this website...",
+          "Need help with SEO optimization?"
+        ],
         popupPlaceholder: "Continue the conversation...",
         launcherButtonLabel: "Ask",
         popupButtonLabel: "Send",
@@ -501,6 +550,10 @@
         var copyStatus = document.getElementById("copyStatus");
         var currentUrlInput = document.getElementById("cfgCurrentUrl");
         var endpointModeInput = document.getElementById("cfgEndpointMode");
+        var placeholderInput = document.getElementById("cfgPlaceholder");
+        var placeholderSequenceInput = document.getElementById("cfgPlaceholderSequence");
+        var placeholderAddInput = document.getElementById("cfgPlaceholderAdd");
+        var placeholderAddButton = document.getElementById("cfgPlaceholderAddBtn");
 
         function syncRuntimeCurrentUrl() {
           var runtimeUrl = window.location.href;
@@ -516,11 +569,48 @@
           return element ? (element.value || "").trim() : "";
         }
 
+        function readMultilineValues(id) {
+          var element = document.getElementById(id);
+          if (!element || typeof element.value !== "string") {
+            return [];
+          }
+          return element.value
+            .split(/\r?\n/)
+            .map(function (item) {
+              return item.trim();
+            })
+            .filter(Boolean);
+        }
+
+        function buildPlaceholderSequence(sequence) {
+          var ordered = [];
+          var seen = {};
+          (Array.isArray(sequence) ? sequence : []).forEach(function (value) {
+            var normalized = String(value || "").trim();
+            if (!normalized || seen[normalized]) {
+              return;
+            }
+            seen[normalized] = true;
+            ordered.push(normalized);
+          });
+          return ordered;
+        }
+
         function readConfigFromForm() {
+          var placeholder = readValue("cfgPlaceholder");
+          var placeholderSequence = buildPlaceholderSequence(readMultilineValues("cfgPlaceholderSequence"));
+          if (!placeholderSequence.length && placeholder) {
+            placeholderSequence = [placeholder];
+          }
+          if (placeholderSequence.length) {
+            placeholder = placeholderSequence[0];
+          }
+
           return {
             title: readValue("cfgTitle"),
             subtitle: readValue("cfgSubtitle"),
-            placeholder: readValue("cfgPlaceholder"),
+            placeholder: placeholder,
+            placeholderSequence: placeholderSequence,
             popupPlaceholder: readValue("cfgPopupPlaceholder"),
             launcherButtonLabel: readValue("cfgLauncherBtnLabel"),
             popupButtonLabel: readValue("cfgPopupBtnLabel"),
@@ -560,6 +650,7 @@
             hostPlacement: config.hostPlacement,
             currentUrl: config.currentUrl,
             placeholder: config.placeholder,
+            placeholderSequence: config.placeholderSequence,
             popupPlaceholder: config.popupPlaceholder,
             launcherButtonLabel: config.launcherButtonLabel,
             popupButtonLabel: config.popupButtonLabel,
@@ -588,6 +679,9 @@
           var config = readConfigFromForm();
           config.currentUrl = runtimeUrl;
           config.endpoint = endpointFromMode(config.endpointMode);
+          if (placeholderInput && config.placeholder) {
+            placeholderInput.value = config.placeholder;
+          }
           if (endpointModeInput) {
             endpointModeInput.value = config.endpointMode;
           }
@@ -608,6 +702,7 @@
               hostSelector: config.hostSelector,
               hostPlacement: config.hostPlacement,
               placeholder: config.placeholder,
+              placeholderSequence: config.placeholderSequence,
               popupPlaceholder: config.popupPlaceholder,
               launcherButtonLabel: config.launcherButtonLabel,
               popupButtonLabel: config.popupButtonLabel,
@@ -624,6 +719,21 @@
           snippet.textContent = buildImplementableSnippet(config);
         }
 
+        function addPlaceholderLine() {
+          if (!placeholderSequenceInput || !placeholderAddInput) {
+            return;
+          }
+          var nextValue = (placeholderAddInput.value || "").trim();
+          if (!nextValue) {
+            return;
+          }
+          var lines = readMultilineValues("cfgPlaceholderSequence");
+          lines.push(nextValue);
+          placeholderSequenceInput.value = lines.join("\n");
+          placeholderAddInput.value = "";
+          applyShowcaseConfig();
+        }
+
         async function copySnippet() {
           try {
             await navigator.clipboard.writeText(snippet.textContent);
@@ -636,6 +746,17 @@
         form.addEventListener("input", applyShowcaseConfig);
         form.addEventListener("change", applyShowcaseConfig);
         copyButton.addEventListener("click", copySnippet);
+        if (placeholderAddButton) {
+          placeholderAddButton.addEventListener("click", addPlaceholderLine);
+        }
+        if (placeholderAddInput) {
+          placeholderAddInput.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              addPlaceholderLine();
+            }
+          });
+        }
 
         syncRuntimeCurrentUrl();
         applyShowcaseConfig();

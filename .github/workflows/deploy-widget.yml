@@ -8,6 +8,9 @@ on:
       - ai-agent-chat-loader.js
       - demo-host.html
       - README.md
+      - package.json
+      - package-lock.json
+      - tests/**
       - .github/workflows/deploy-widget.yml
   workflow_dispatch:
 
@@ -20,6 +23,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Run automated tests
+        run: |
+          npm ci
+          npm test
 
       - name: Prepare deploy assets
         run: |

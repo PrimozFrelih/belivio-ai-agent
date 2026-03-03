@@ -53,6 +53,7 @@ The widget reads these at prompt submit time, so you can expose them as page inp
 - `hostSelector`
 - `hostPlacement`
 - `placeholder`
+- `placeholderSequence` (optional array/string list; launcher cycles items every 2s in defined order)
 - `popupPlaceholder`
 - `launcherButtonLabel`
 - `popupButtonLabel`
@@ -63,6 +64,7 @@ The widget reads these at prompt submit time, so you can expose them as page inp
 
 `mode="fullcenter"` renders a wide launcher inside `hostSelector`; on submit it opens a large centered popup chat with backdrop blur.
 `mode="popupfloat"` shows a floating agent icon button that opens the popup chat.
+If `placeholderSequence` is provided, launcher placeholder rotates every 2 seconds, starting with the first item.
 Input length is capped at 200 characters per message.
 
 ```html
@@ -111,6 +113,56 @@ Input length is capped at 200 characters per message.
 ## Local test
 
 Open [demo-host.html](/Users/primozfrelih/Documents/My Codex projects/SAAS AI Agent/demo-host.html) in a browser.
+
+## Automated tests
+
+Run all automated tests (widget tests + backend contract tests skipped by default):
+
+```bash
+npm ci
+npm test
+```
+
+Run backend contract tests against staging/integration backend:
+
+```bash
+RUN_BACKEND_TESTS=1 \
+BACKEND_TEST_URL=https://your-backend.example.com \
+BACKEND_HEALTH_PATH=/health \
+BACKEND_AI_ENDPOINT=/webhook/ai-agent \
+npm test
+```
+
+What is covered now:
+- widget defaults and key config guards (`domain`, contact defaults)
+- top-level hyperlink behavior (`target=\"_top\"`)
+- URL and phone auto-link rendering in assistant answers
+- streaming fallback guard check
+- backend API contract smoke tests (opt-in via env vars)
+
+## Backend test strategy (recommended)
+
+For backend (API, DB, business logic), run tests in 3 layers:
+
+1. Unit tests (fast, on every commit)
+- pure business logic, validators, formatters, authorization rules
+- mock all external integrations
+
+2. Integration tests (on PR + main)
+- API handlers + real DB engine in isolated test database/schema
+- migrations up/down in pipeline
+- transaction rollback or DB reset between tests
+
+3. Contract/E2E smoke tests (on main + nightly)
+- run against staging URL
+- assert endpoint health, AI webhook contract, auth, and critical user flows
+- alert on non-2xx/3xx and schema regressions
+
+Execution recommendation:
+- `pull_request`: unit + integration + widget tests
+- `push main`: unit + integration + widget tests + deploy
+- nightly schedule: contract/E2E against staging
+- block deploy if any required test job fails
 
 ## Auto deploy
 
@@ -167,6 +219,7 @@ git push origin v1.0.0
 - `placeholder` (launcher input placeholder; preferred)
 - `currentUrl` (optional; defaults to the actual runtime URL)
 - `launcherPlaceholder` (legacy alias of `placeholder`)
+- `placeholderSequence` (optional; rotates launcher placeholders every 2s in listed order)
 - `popupPlaceholder`
 - `launcherButtonLabel`
 - `popupButtonLabel`
