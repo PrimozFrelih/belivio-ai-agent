@@ -419,6 +419,27 @@
     }
   }
 
+  function applyLauncherPlaceholderText(text, knownPlaceholders) {
+    if (!refs.launcherInput) {
+      return;
+    }
+    var nextText = typeof text === "string" ? text : "";
+    refs.launcherInput.placeholder = nextText;
+
+    var currentValue = typeof refs.launcherInput.value === "string" ? refs.launcherInput.value.trim() : "";
+    if (!currentValue) {
+      return;
+    }
+    if (document.activeElement === refs.launcherInput) {
+      return;
+    }
+
+    var known = Array.isArray(knownPlaceholders) ? knownPlaceholders : [];
+    if (known.indexOf(currentValue) !== -1) {
+      refs.launcherInput.value = "";
+    }
+  }
+
   function syncLauncherPlaceholderRotation(resetIndex) {
     var list = normalizePlaceholderSequence(config.placeholderSequence, [config.placeholder]);
     if (!list.length) {
@@ -437,7 +458,7 @@
     if (resetIndex || placeholderRotateIndex >= list.length || placeholderRotateIndex < 0) {
       placeholderRotateIndex = 0;
     }
-    refs.launcherInput.placeholder = list[placeholderRotateIndex];
+    applyLauncherPlaceholderText(list[placeholderRotateIndex], list);
 
     if (list.length < 2) {
       return;
@@ -448,7 +469,7 @@
         return;
       }
       placeholderRotateIndex = (placeholderRotateIndex + 1) % list.length;
-      refs.launcherInput.placeholder = list[placeholderRotateIndex];
+      applyLauncherPlaceholderText(list[placeholderRotateIndex], list);
     }, PLACEHOLDER_ROTATE_INTERVAL_MS);
   }
 

@@ -584,6 +584,9 @@
     <script>
       var LIVE_ENDPOINT = "https://app.beliv.io/webhook/ai-agent";
       var TEST_ENDPOINT = "https://app.beliv.io/internal/webhook-test/ai-agent";
+      var LOADER_VERSION = "20260303-rotation2";
+      var LOADER_PUBLIC_URL =
+        "https://widget.beliv.io/web-ai-agent/ai-agent-chat-loader.js?v=" + LOADER_VERSION;
       var runtimeCurrentUrl = window.location.href;
       window.BelivAIAgentConfig = {
         title: "Website AI Helper",
@@ -615,7 +618,7 @@
         endpoint: LIVE_ENDPOINT
       };
     </script>
-    <script src="./ai-agent-chat-loader.js"></script>
+    <script src="./ai-agent-chat-loader.js?v=20260303-rotation2"></script>
     <script>
       (function () {
         var form = document.getElementById("configForm");
@@ -860,7 +863,7 @@
             "<script>",
             "window.BelivAIAgentConfig = " + snippetConfigSerialized + ";",
             "<\\/script>",
-            '<script src="https://widget.beliv.io/web-ai-agent/ai-agent-chat-loader.js"><\\/script>'
+            '<script src="' + LOADER_PUBLIC_URL + '"><\\/script>'
           ].join("\n");
         }
 
