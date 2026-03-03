@@ -2579,7 +2579,7 @@
       "  z-index:3;" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-input::placeholder{" +
-      "  color:var(--beliv-accent-dark);" +
+      "  color:var(--beliv-accent-light);" +
       "}" +
       ".beliv-shell.beliv-mode-fullcenter .beliv-launcher-submit{" +
       "  position:absolute;" +
