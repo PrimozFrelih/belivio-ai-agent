@@ -1,0 +1,40 @@
+name: User Story
+description: Create a new user story for feature development
+title: "[USER STORY] "
+labels: ["user-story"]
+body:
+  - type: markdown
+    attributes:
+      value: "## User Story"
+  - type: textarea
+    id: as_a
+    attributes:
+      label: "As a..."
+      description: "Define the user role (As a [user type])"
+      placeholder: "As a [user/admin/developer]..."
+    validations:
+      required: true
+  - type: textarea
+    id: i_want
+    attributes:
+      label: "I want..."
+      description: "Describe what the user wants to do"
+      placeholder: "I want to [action]..."
+    validations:
+      required: true
+  - type: textarea
+    id: so_that
+    attributes:
+      label: "So that..."
+      description: "Explain the benefit or value"
+      placeholder: "So that [benefit]..."
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: "Acceptance Criteria"
+      description: "Define how to know when this story is complete"
+      placeholder: "- [ ] Criterion 1\n- [ ] Criterion 2"
+    validations:
+      required: true
