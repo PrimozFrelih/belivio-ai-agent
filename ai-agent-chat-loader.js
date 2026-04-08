@@ -3271,10 +3271,10 @@
       "  min-width:0;" +
       "}" +
       ".beliv-site-favicon{" +
-      "  width:24px;" +
-      "  height:24px;" +
-      "  border-radius:8px;" +
-      "  flex:0 0 24px;" +
+      "  width:30px;" +
+      "  height:30px;" +
+      "  border-radius:10px;" +
+      "  flex:0 0 30px;" +
       "  object-fit:cover;" +
       "  border:1px solid rgba(255,255,255,0.74);" +
       "  background:rgba(255,255,255,0.24);" +
@@ -3944,10 +3944,10 @@
       "    gap:7px;" +
       "  }" +
       "  .beliv-site-favicon{" +
-      "    width:22px;" +
-      "    height:22px;" +
-      "    flex-basis:22px;" +
-      "    border-radius:6px;" +
+      "    width:28px;" +
+      "    height:28px;" +
+      "    flex-basis:28px;" +
+      "    border-radius:8px;" +
       "  }" +
       "  .beliv-title{" +
       "    font-size:16px;" +
