@@ -3506,12 +3506,14 @@
       "  font-weight:700;" +
       "  text-align:left;" +
       "  cursor:pointer;" +
+      "  opacity:.72;" +
       "  box-shadow:0 12px 24px rgba(20,86,188,0.26),inset 0 1px 0 rgba(255,255,255,0.28);" +
-      "  transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease,color .16s ease,background .16s ease;" +
+      "  transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease,color .16s ease,background .16s ease,opacity .16s ease;" +
       "  overflow-wrap:anywhere;" +
       "}" +
       ".beliv-suggested-prompt:hover,.beliv-suggested-prompt:focus-visible{" +
       "  transform:translateY(-1px);" +
+      "  opacity:1;" +
       "  border-color:rgba(255,255,255,0.28);" +
       "  color:#ffffff;" +
       "  background:linear-gradient(150deg,color-mix(in srgb,var(--beliv-accent-light) 82%,#ffffff 18%) 0,color-mix(in srgb,var(--beliv-accent) 90%,#ffffff 10%) 42%,color-mix(in srgb,var(--beliv-accent-dark) 96%,#0a4fb5 4%) 100%);" +
