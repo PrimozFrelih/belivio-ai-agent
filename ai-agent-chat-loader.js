@@ -3518,6 +3518,7 @@
       ".beliv-suggested-prompt:hover,.beliv-suggested-prompt:focus-visible{" +
       "  transform:translateY(-1px);" +
       "  border-color:color-mix(in srgb,var(--beliv-accent) 40%,#ffffff 60%);" +
+      "  border-left-style:solid;" +
       "  border-left-color:var(--beliv-accent-dark);" +
       "  color:var(--beliv-accent-dark);" +
       "  background:color-mix(in srgb,#f1f8ff 76%,var(--beliv-accent) 24%);" +
