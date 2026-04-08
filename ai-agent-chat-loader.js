@@ -3495,9 +3495,9 @@
       "}" +
       ".beliv-suggested-prompt{" +
       "  max-width:100%;" +
-      "  border:1px solid rgba(194,213,235,0.96);" +
+      "  border:1px solid color-mix(in srgb,var(--beliv-accent) 22%,#ffffff 78%);" +
       "  border-radius:16px;" +
-      "  background:linear-gradient(180deg,rgba(255,255,255,0.98) 0,rgba(247,251,255,0.96) 100%);" +
+      "  background:linear-gradient(180deg,color-mix(in srgb,#ffffff 90%,var(--beliv-accent) 10%) 0,color-mix(in srgb,#ffffff 84%,var(--beliv-accent) 16%) 100%);" +
       "  color:var(--beliv-text-accent-dark);" +
       "  padding:11px 14px;" +
       "  font-size:13px;" +
@@ -3511,9 +3511,10 @@
       "}" +
       ".beliv-suggested-prompt:hover,.beliv-suggested-prompt:focus-visible{" +
       "  transform:translateY(-1px);" +
-      "  border-color:color-mix(in srgb,var(--beliv-accent) 62%,#ffffff 38%);" +
+      "  border-color:color-mix(in srgb,var(--beliv-accent) 52%,#ffffff 48%);" +
       "  color:var(--beliv-accent-dark);" +
-      "  box-shadow:0 10px 22px rgba(24,77,161,0.14),inset 0 1px 0 rgba(255,255,255,0.88);" +
+      "  background:linear-gradient(180deg,color-mix(in srgb,#ffffff 84%,var(--beliv-accent) 16%) 0,color-mix(in srgb,#ffffff 76%,var(--beliv-accent) 24%) 100%);" +
+      "  box-shadow:0 10px 22px rgba(24,77,161,0.14),inset 0 1px 0 rgba(255,255,255,0.74);" +
       "}" +
       ".beliv-suggested-prompt:focus-visible{" +
       "  outline:2px solid rgba(24,119,242,0.22);" +
@@ -3739,9 +3740,9 @@
       "  border-color:#8e7346;" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-suggested-prompt{" +
-      "  background:linear-gradient(180deg,#16263b 0,#132135 100%);" +
+      "  background:linear-gradient(180deg,color-mix(in srgb,#16263b 86%,var(--beliv-accent) 14%) 0,color-mix(in srgb,#132135 78%,var(--beliv-accent) 22%) 100%);" +
       "  color:#e5edf6;" +
-      "  border-color:#30465f;" +
+      "  border-color:color-mix(in srgb,var(--beliv-accent-light) 24%,#30465f 76%);" +
       "  box-shadow:0 8px 18px rgba(0,0,0,0.32),inset 0 1px 0 rgba(255,255,255,0.06);" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-suggested-prompt:hover,.beliv-shell.beliv-theme-dark .beliv-suggested-prompt:focus-visible{" +
