@@ -176,3 +176,15 @@ test('brand label supports optional safe html rendering and top-level links', ()
   assert.match(loaderSource, /beliv-brand-link/);
   assert.match(loaderSource, /clean\.setAttribute\("target", "_top"\)/);
 });
+
+test('config text supports sanitized html rendering in agent ui', () => {
+  assert.match(loaderSource, /titleHtml:\s*false/);
+  assert.match(loaderSource, /subtitleHtml:\s*false/);
+  assert.match(loaderSource, /welcomeMessageHtml:\s*false/);
+  assert.match(loaderSource, /disclaimerHtml:\s*false/);
+  assert.match(loaderSource, /suggestedPromptsHtml:\s*false/);
+  assert.match(loaderSource, /function renderConfigText\(/);
+  assert.match(loaderSource, /function sanitizeInlineHtml\(/);
+  assert.match(loaderSource, /function shouldRenderConfigHtml\(/);
+  assert.match(loaderSource, /linkClass:\s*"beliv-rich-link"/);
+});

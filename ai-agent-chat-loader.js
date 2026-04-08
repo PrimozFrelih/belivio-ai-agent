@@ -30,12 +30,15 @@
     launcherButtonLabel: "Ask",
     popupButtonLabel: "Send",
     welcomeMessage: "Hi! I can help you find information from this website.",
+    welcomeMessageHtml: false,
     disclaimer: "",
+    disclaimerHtml: false,
     suggestedPrompts: [
       "Kak\u0161ni so pogoji sodelovanja?",
       "Kako sodelujete z ekipami v podjetju?",
       "Kak\u0161en je va\u0161 na\u010din uvedbe AI orodij v poslovanje?"
     ],
+    suggestedPromptsHtml: false,
     contactEmail: "primoz.frelih@agital.si",
     contactPhone: "00 386 41 980 991",
     accentColor: "#1877f2",
@@ -45,6 +48,8 @@
     zIndex: 2147483000,
     popupWidth: 420,
     popupHeight: 620,
+    titleHtml: false,
+    subtitleHtml: false,
     brandLabel: "Powered by Beliv",
     brandLabelHtml: false,
     endpoint: DEFAULT_ENDPOINT
@@ -92,7 +97,19 @@
   );
   var config = {
     title: normalizeText(runtimeConfig.title, DEFAULT_CONFIG.title),
+    titleHtml: normalizeBoolean(
+      Object.prototype.hasOwnProperty.call(runtimeConfig, "titleHtml")
+        ? runtimeConfig.titleHtml
+        : runtimeConfig.titleAllowHtml,
+      DEFAULT_CONFIG.titleHtml
+    ),
     subtitle: normalizeText(runtimeConfig.subtitle, DEFAULT_CONFIG.subtitle),
+    subtitleHtml: normalizeBoolean(
+      Object.prototype.hasOwnProperty.call(runtimeConfig, "subtitleHtml")
+        ? runtimeConfig.subtitleHtml
+        : runtimeConfig.subtitleAllowHtml,
+      DEFAULT_CONFIG.subtitleHtml
+    ),
     siteName: normalizeText(runtimeConfig.siteName, detectedSiteName),
     domain: normalizeDomain(runtimeConfig.domain, detectedRuntimeDomain),
     mainColor: resolvedAccentColor,
@@ -115,14 +132,32 @@
     ),
     popupButtonLabel: normalizeText(runtimeConfig.popupButtonLabel, DEFAULT_CONFIG.popupButtonLabel),
     welcomeMessage: normalizeText(runtimeConfig.welcomeMessage, DEFAULT_CONFIG.welcomeMessage),
+    welcomeMessageHtml: normalizeBoolean(
+      Object.prototype.hasOwnProperty.call(runtimeConfig, "welcomeMessageHtml")
+        ? runtimeConfig.welcomeMessageHtml
+        : runtimeConfig.welcomeMessageAllowHtml,
+      DEFAULT_CONFIG.welcomeMessageHtml
+    ),
     disclaimer: normalizeOptionalText(runtimeConfig.disclaimer, ""),
+    disclaimerHtml: normalizeBoolean(
+      Object.prototype.hasOwnProperty.call(runtimeConfig, "disclaimerHtml")
+        ? runtimeConfig.disclaimerHtml
+        : runtimeConfig.disclaimerAllowHtml,
+      DEFAULT_CONFIG.disclaimerHtml
+    ),
     suggestedPrompts: normalizePromptList(
       Object.prototype.hasOwnProperty.call(runtimeConfig, "suggestedPrompts")
         ? runtimeConfig.suggestedPrompts
         : Object.prototype.hasOwnProperty.call(runtimeConfig, "preloadedPrompts")
           ? runtimeConfig.preloadedPrompts
-          : runtimeConfig.quickPrompts,
+        : runtimeConfig.quickPrompts,
       DEFAULT_CONFIG.suggestedPrompts
+    ),
+    suggestedPromptsHtml: normalizeBoolean(
+      Object.prototype.hasOwnProperty.call(runtimeConfig, "suggestedPromptsHtml")
+        ? runtimeConfig.suggestedPromptsHtml
+        : runtimeConfig.suggestedPromptsAllowHtml,
+      DEFAULT_CONFIG.suggestedPromptsHtml
     ),
     contactEmail: normalizeEmail(runtimeConfig.contactEmail || runtimeConfig.email, ""),
     contactPhone: normalizePhone(runtimeConfig.contactPhone || runtimeConfig.phone, ""),
@@ -276,8 +311,16 @@
     refs.chatInput = root.querySelector(".beliv-chat-input");
     refs.chatButton = root.querySelector(".beliv-chat-submit");
 
-    refs.titleText.textContent = config.title;
-    refs.subtitleText.textContent = config.subtitle;
+    renderConfigText(refs.titleText, config.title, {
+      allowHtml: config.titleHtml,
+      allowLinks: true,
+      linkClass: "beliv-rich-link"
+    });
+    renderConfigText(refs.subtitleText, config.subtitle, {
+      allowHtml: config.subtitleHtml,
+      allowLinks: true,
+      linkClass: "beliv-rich-link"
+    });
     renderBrandLabel();
     refs.launcherInput.placeholder = config.placeholder;
     refs.chatInput.placeholder = config.popupPlaceholder;
@@ -380,7 +423,11 @@
 
     if (!state.hasWelcomed && config.welcomeMessage) {
       state.hasWelcomed = true;
-      appendMessage("assistant", config.welcomeMessage);
+      appendMessage("assistant", config.welcomeMessage, "", {
+        allowHtml: config.welcomeMessageHtml,
+        allowLinks: true,
+        linkClass: "beliv-auto-link"
+      });
     }
     syncSuggestedPrompts();
 
@@ -440,18 +487,31 @@
     refs.chatButton.setAttribute("aria-label", config.popupButtonLabel);
   }
 
-  function renderBrandLabel() {
-    if (!refs.brandText) {
+  function renderConfigText(target, value, options) {
+    if (!target) {
       return;
     }
-    if (!config.brandLabelHtml) {
-      refs.brandText.textContent = config.brandLabel;
+
+    var normalized = typeof value === "string" ? value : "";
+    if (!shouldRenderConfigHtml(normalized, options && options.allowHtml)) {
+      target.textContent = normalized;
       return;
     }
-    refs.brandText.innerHTML = sanitizeBrandLabelHtml(config.brandLabel);
+
+    target.innerHTML = sanitizeInlineHtml(normalized, options);
   }
 
-  function sanitizeBrandLabelHtml(value) {
+  function shouldRenderConfigHtml(value, explicitFlag) {
+    if (explicitFlag) {
+      return true;
+    }
+    if (typeof value !== "string" || !value) {
+      return false;
+    }
+    return /<\s*\/?\s*[a-z][^>]*>/i.test(value);
+  }
+
+  function sanitizeInlineHtml(value, options) {
     var source = typeof value === "string" ? value : "";
     if (!source) {
       return "";
@@ -462,12 +522,12 @@
     var outputRoot = document.createElement("div");
     var i;
     for (i = 0; i < sourceRoot.childNodes.length; i += 1) {
-      appendSanitizedBrandNode(outputRoot, sourceRoot.childNodes[i]);
+      appendSanitizedInlineNode(outputRoot, sourceRoot.childNodes[i], options);
     }
     return outputRoot.innerHTML;
   }
 
-  function appendSanitizedBrandNode(parent, node) {
+  function appendSanitizedInlineNode(parent, node, options) {
     if (!parent || !node) {
       return;
     }
@@ -482,20 +542,33 @@
     var tagName = String(node.tagName || "").toUpperCase();
     var allowed = {
       A: true,
-      BR: true,
-      STRONG: true,
-      EM: true,
       B: true,
+      BR: true,
+      CODE: true,
+      EM: true,
       I: true,
-      U: true,
+      MARK: true,
+      SMALL: true,
       SPAN: true,
-      SMALL: true
+      STRONG: true,
+      SUB: true,
+      SUP: true,
+      U: true
     };
     if (!allowed[tagName]) {
       var fallbackChildren = node.childNodes || [];
       var x;
       for (x = 0; x < fallbackChildren.length; x += 1) {
-        appendSanitizedBrandNode(parent, fallbackChildren[x]);
+        appendSanitizedInlineNode(parent, fallbackChildren[x], options);
+      }
+      return;
+    }
+
+    if (tagName === "A" && (!options || options.allowLinks === false)) {
+      var nestedChildren = node.childNodes || [];
+      var y;
+      for (y = 0; y < nestedChildren.length; y += 1) {
+        appendSanitizedInlineNode(parent, nestedChildren[y], options);
       }
       return;
     }
@@ -507,7 +580,9 @@
         clean.setAttribute("href", href);
         clean.setAttribute("target", "_top");
         clean.setAttribute("rel", "noopener noreferrer");
-        clean.setAttribute("class", "beliv-brand-link");
+        if (options && options.linkClass) {
+          clean.setAttribute("class", options.linkClass);
+        }
       }
       var title = normalizeOptionalText(node.getAttribute("title"), "");
       if (title) {
@@ -518,7 +593,7 @@
     var children = node.childNodes || [];
     var i;
     for (i = 0; i < children.length; i += 1) {
-      appendSanitizedBrandNode(clean, children[i]);
+      appendSanitizedInlineNode(clean, children[i], options);
     }
 
     if (tagName === "A" && !clean.getAttribute("href")) {
@@ -529,6 +604,33 @@
     }
 
     parent.appendChild(clean);
+  }
+
+  function renderBrandLabel() {
+    if (!refs.brandText) {
+      return;
+    }
+    renderConfigText(refs.brandText, config.brandLabel, {
+      allowHtml: config.brandLabelHtml,
+      allowLinks: true,
+      linkClass: "beliv-brand-link"
+    });
+  }
+
+  function sanitizeBrandLabelHtml(value) {
+    return sanitizeInlineHtml(value, {
+      allowHtml: true,
+      allowLinks: true,
+      linkClass: "beliv-brand-link"
+    });
+  }
+
+  function appendSanitizedBrandNode(parent, node) {
+    appendSanitizedInlineNode(parent, node, {
+      allowHtml: true,
+      allowLinks: true,
+      linkClass: "beliv-brand-link"
+    });
   }
 
   function sanitizeBrandLabelHref(value) {
@@ -1082,7 +1184,7 @@
     }
   }
 
-  function appendMessage(role, text, extraClass) {
+  function appendMessage(role, text, extraClass, renderOptions) {
     if (!refs.messages) {
       return null;
     }
@@ -1091,7 +1193,7 @@
 
     var bubble = document.createElement("div");
     bubble.className = "beliv-bubble";
-    renderBubbleContent(bubble, text, role === "assistant");
+    renderBubbleContent(bubble, text, role === "assistant", renderOptions);
     row.appendChild(bubble);
 
     refs.messages.appendChild(row);
@@ -1119,11 +1221,20 @@
     scrollMessagesToBottom();
   }
 
-  function renderBubbleContent(bubble, text, enableAutoLinks) {
+  function renderBubbleContent(bubble, text, enableAutoLinks, renderOptions) {
     if (!bubble) {
       return;
     }
     var normalized = typeof text === "string" ? text : normalizeAssistantText(text);
+    if (shouldRenderConfigHtml(normalized, renderOptions && renderOptions.allowHtml)) {
+      bubble.innerHTML = sanitizeInlineHtml(normalized, {
+        allowHtml: true,
+        allowLinks: !renderOptions || renderOptions.allowLinks !== false,
+        linkClass:
+          renderOptions && renderOptions.linkClass ? renderOptions.linkClass : "beliv-rich-link"
+      });
+      return;
+    }
     if (!enableAutoLinks) {
       bubble.textContent = normalized;
       return;
@@ -1319,7 +1430,11 @@
 
     var text = document.createElement("span");
     text.className = "beliv-disclaimer-text";
-    text.textContent = config.disclaimer;
+    renderConfigText(text, config.disclaimer, {
+      allowHtml: config.disclaimerHtml,
+      allowLinks: true,
+      linkClass: "beliv-rich-link"
+    });
 
     bubble.appendChild(icon);
     bubble.appendChild(text);
@@ -1359,8 +1474,11 @@
       var button = document.createElement("button");
       button.type = "button";
       button.className = "beliv-suggested-prompt";
-      button.textContent = prompt;
-      button.setAttribute("aria-label", prompt);
+      renderConfigText(button, prompt, {
+        allowHtml: config.suggestedPromptsHtml,
+        allowLinks: false
+      });
+      button.setAttribute("aria-label", normalizeText(button.textContent || "", prompt));
       button.addEventListener("click", function (event) {
         var value = event && event.currentTarget ? event.currentTarget.textContent || "" : "";
         sendPrompt(value);
@@ -1892,8 +2010,24 @@
           if (Object.prototype.hasOwnProperty.call(nextContext, "title")) {
             window.BelivAIAgentConfig.title = nextContext.title;
           }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "titleHtml")) {
+            window.BelivAIAgentConfig.titleHtml = nextContext.titleHtml;
+            window.BelivAIAgentConfig.titleAllowHtml = nextContext.titleHtml;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "titleAllowHtml")) {
+            window.BelivAIAgentConfig.titleHtml = nextContext.titleAllowHtml;
+            window.BelivAIAgentConfig.titleAllowHtml = nextContext.titleAllowHtml;
+          }
           if (Object.prototype.hasOwnProperty.call(nextContext, "subtitle")) {
             window.BelivAIAgentConfig.subtitle = nextContext.subtitle;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "subtitleHtml")) {
+            window.BelivAIAgentConfig.subtitleHtml = nextContext.subtitleHtml;
+            window.BelivAIAgentConfig.subtitleAllowHtml = nextContext.subtitleHtml;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "subtitleAllowHtml")) {
+            window.BelivAIAgentConfig.subtitleHtml = nextContext.subtitleAllowHtml;
+            window.BelivAIAgentConfig.subtitleAllowHtml = nextContext.subtitleAllowHtml;
           }
           if (Object.prototype.hasOwnProperty.call(nextContext, "siteName")) {
             window.BelivAIAgentConfig.siteName = nextContext.siteName;
@@ -1952,13 +2086,37 @@
           if (Object.prototype.hasOwnProperty.call(nextContext, "welcomeMessage")) {
             window.BelivAIAgentConfig.welcomeMessage = nextContext.welcomeMessage;
           }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "welcomeMessageHtml")) {
+            window.BelivAIAgentConfig.welcomeMessageHtml = nextContext.welcomeMessageHtml;
+            window.BelivAIAgentConfig.welcomeMessageAllowHtml = nextContext.welcomeMessageHtml;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "welcomeMessageAllowHtml")) {
+            window.BelivAIAgentConfig.welcomeMessageHtml = nextContext.welcomeMessageAllowHtml;
+            window.BelivAIAgentConfig.welcomeMessageAllowHtml = nextContext.welcomeMessageAllowHtml;
+          }
           if (Object.prototype.hasOwnProperty.call(nextContext, "disclaimer")) {
             window.BelivAIAgentConfig.disclaimer = nextContext.disclaimer;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "disclaimerHtml")) {
+            window.BelivAIAgentConfig.disclaimerHtml = nextContext.disclaimerHtml;
+            window.BelivAIAgentConfig.disclaimerAllowHtml = nextContext.disclaimerHtml;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "disclaimerAllowHtml")) {
+            window.BelivAIAgentConfig.disclaimerHtml = nextContext.disclaimerAllowHtml;
+            window.BelivAIAgentConfig.disclaimerAllowHtml = nextContext.disclaimerAllowHtml;
           }
           if (Object.prototype.hasOwnProperty.call(nextContext, "suggestedPrompts")) {
             window.BelivAIAgentConfig.suggestedPrompts = nextContext.suggestedPrompts;
             window.BelivAIAgentConfig.preloadedPrompts = nextContext.suggestedPrompts;
             window.BelivAIAgentConfig.quickPrompts = nextContext.suggestedPrompts;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "suggestedPromptsHtml")) {
+            window.BelivAIAgentConfig.suggestedPromptsHtml = nextContext.suggestedPromptsHtml;
+            window.BelivAIAgentConfig.suggestedPromptsAllowHtml = nextContext.suggestedPromptsHtml;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "suggestedPromptsAllowHtml")) {
+            window.BelivAIAgentConfig.suggestedPromptsHtml = nextContext.suggestedPromptsAllowHtml;
+            window.BelivAIAgentConfig.suggestedPromptsAllowHtml = nextContext.suggestedPromptsAllowHtml;
           }
           if (Object.prototype.hasOwnProperty.call(nextContext, "preloadedPrompts")) {
             window.BelivAIAgentConfig.suggestedPrompts = nextContext.preloadedPrompts;
@@ -2043,7 +2201,15 @@
     var liveConfig = isPlainObject(window.BelivAIAgentConfig) ? window.BelivAIAgentConfig : {};
     return {
       title: liveConfig.title,
+      titleHtml:
+        Object.prototype.hasOwnProperty.call(liveConfig, "titleHtml")
+          ? liveConfig.titleHtml
+          : liveConfig.titleAllowHtml,
       subtitle: liveConfig.subtitle,
+      subtitleHtml:
+        Object.prototype.hasOwnProperty.call(liveConfig, "subtitleHtml")
+          ? liveConfig.subtitleHtml
+          : liveConfig.subtitleAllowHtml,
       siteName: liveConfig.siteName,
       domain: liveConfig.domain,
       mainColor: liveConfig.mainColor,
@@ -2060,13 +2226,25 @@
       launcherButtonLabel: liveConfig.launcherButtonLabel,
       popupButtonLabel: liveConfig.popupButtonLabel,
       welcomeMessage: liveConfig.welcomeMessage,
+      welcomeMessageHtml:
+        Object.prototype.hasOwnProperty.call(liveConfig, "welcomeMessageHtml")
+          ? liveConfig.welcomeMessageHtml
+          : liveConfig.welcomeMessageAllowHtml,
       disclaimer: liveConfig.disclaimer,
+      disclaimerHtml:
+        Object.prototype.hasOwnProperty.call(liveConfig, "disclaimerHtml")
+          ? liveConfig.disclaimerHtml
+          : liveConfig.disclaimerAllowHtml,
       suggestedPrompts:
         Object.prototype.hasOwnProperty.call(liveConfig, "suggestedPrompts")
           ? liveConfig.suggestedPrompts
           : Object.prototype.hasOwnProperty.call(liveConfig, "preloadedPrompts")
             ? liveConfig.preloadedPrompts
             : liveConfig.quickPrompts,
+      suggestedPromptsHtml:
+        Object.prototype.hasOwnProperty.call(liveConfig, "suggestedPromptsHtml")
+          ? liveConfig.suggestedPromptsHtml
+          : liveConfig.suggestedPromptsAllowHtml,
       contactEmail: liveConfig.contactEmail || liveConfig.email,
       contactPhone: liveConfig.contactPhone || liveConfig.phone,
       brandLabel: liveConfig.brandLabel,
@@ -2090,7 +2268,19 @@
     var hasMainColorOverride = Object.prototype.hasOwnProperty.call(nextContext, "mainColor");
     var hasAccentColorOverride = Object.prototype.hasOwnProperty.call(nextContext, "accentColor");
     var nextTitle = normalizeText(nextContext.title, config.title);
+    var nextTitleHtml = normalizeBoolean(
+      Object.prototype.hasOwnProperty.call(nextContext, "titleHtml")
+        ? nextContext.titleHtml
+        : nextContext.titleAllowHtml,
+      config.titleHtml
+    );
     var nextSubtitle = normalizeText(nextContext.subtitle, config.subtitle);
+    var nextSubtitleHtml = normalizeBoolean(
+      Object.prototype.hasOwnProperty.call(nextContext, "subtitleHtml")
+        ? nextContext.subtitleHtml
+        : nextContext.subtitleAllowHtml,
+      config.subtitleHtml
+    );
     var nextSiteName = normalizeText(nextContext.siteName, config.siteName);
     var nextMainColor = normalizeColor(nextContext.mainColor, config.mainColor);
     var nextAccentColor = normalizeColor(
@@ -2152,14 +2342,32 @@
     );
     var nextPopupButtonLabel = normalizeText(nextContext.popupButtonLabel, config.popupButtonLabel);
     var nextWelcomeMessage = normalizeText(nextContext.welcomeMessage, config.welcomeMessage);
+    var nextWelcomeMessageHtml = normalizeBoolean(
+      Object.prototype.hasOwnProperty.call(nextContext, "welcomeMessageHtml")
+        ? nextContext.welcomeMessageHtml
+        : nextContext.welcomeMessageAllowHtml,
+      config.welcomeMessageHtml
+    );
     var nextDisclaimer = normalizeOptionalText(nextContext.disclaimer, config.disclaimer);
+    var nextDisclaimerHtml = normalizeBoolean(
+      Object.prototype.hasOwnProperty.call(nextContext, "disclaimerHtml")
+        ? nextContext.disclaimerHtml
+        : nextContext.disclaimerAllowHtml,
+      config.disclaimerHtml
+    );
     var nextSuggestedPrompts = normalizePromptList(
       Object.prototype.hasOwnProperty.call(nextContext, "suggestedPrompts")
         ? nextContext.suggestedPrompts
         : Object.prototype.hasOwnProperty.call(nextContext, "preloadedPrompts")
           ? nextContext.preloadedPrompts
-          : nextContext.quickPrompts,
+        : nextContext.quickPrompts,
       config.suggestedPrompts
+    );
+    var nextSuggestedPromptsHtml = normalizeBoolean(
+      Object.prototype.hasOwnProperty.call(nextContext, "suggestedPromptsHtml")
+        ? nextContext.suggestedPromptsHtml
+        : nextContext.suggestedPromptsAllowHtml,
+      config.suggestedPromptsHtml
     );
     var nextContactEmail = normalizeEmail(
       Object.prototype.hasOwnProperty.call(nextContext, "contactEmail")
@@ -2187,6 +2395,7 @@
     var nextDomain = normalizeDomain(nextContext.domain, nextDomainFallback);
 
     config.title = nextTitle;
+    config.titleHtml = nextTitleHtml;
     config.siteName = nextSiteName;
     config.domain = nextDomain;
     config.mainColor = nextAccentColor;
@@ -2208,7 +2417,9 @@
     config.brandLabel = nextBrandLabel;
     config.brandLabelHtml = nextBrandLabelHtml;
     config.disclaimer = nextDisclaimer;
+    config.disclaimerHtml = nextDisclaimerHtml;
     config.suggestedPrompts = nextSuggestedPrompts;
+    config.suggestedPromptsHtml = nextSuggestedPromptsHtml;
     config.contactEmail = nextContactEmail;
     config.contactPhone = nextContactPhone;
     config.currentUrl = nextCurrentUrl;
@@ -2219,17 +2430,27 @@
     } else {
       config.subtitle = nextSubtitle;
     }
+    config.subtitleHtml = nextSubtitleHtml;
     if (autoWelcomeMessage && !hasWelcomeOverride) {
       config.welcomeMessage = "Hi! I can help you find information from " + config.siteName + ".";
     } else {
       config.welcomeMessage = nextWelcomeMessage;
     }
+    config.welcomeMessageHtml = nextWelcomeMessageHtml;
 
     if (refs.titleText) {
-      refs.titleText.textContent = config.title;
+      renderConfigText(refs.titleText, config.title, {
+        allowHtml: config.titleHtml,
+        allowLinks: true,
+        linkClass: "beliv-rich-link"
+      });
     }
     if (refs.subtitleText) {
-      refs.subtitleText.textContent = config.subtitle;
+      renderConfigText(refs.subtitleText, config.subtitle, {
+        allowHtml: config.subtitleHtml,
+        allowLinks: true,
+        linkClass: "beliv-rich-link"
+      });
     }
     syncLauncherPlaceholderRotation(true);
     if (refs.chatInput) {
@@ -3428,6 +3649,17 @@
       "  color:var(--beliv-accent);" +
       "}" +
       ".beliv-bubble .beliv-auto-link:focus-visible{" +
+      "  outline:2px solid color-mix(in srgb,var(--beliv-accent) 64%,#ffffff 36%);" +
+      "  outline-offset:2px;" +
+      "  border-radius:4px;" +
+      "}" +
+      ".beliv-rich-link{" +
+      "  color:inherit;" +
+      "  text-decoration:underline;" +
+      "  text-decoration-thickness:1.25px;" +
+      "  text-underline-offset:2px;" +
+      "}" +
+      ".beliv-rich-link:focus-visible{" +
       "  outline:2px solid color-mix(in srgb,var(--beliv-accent) 64%,#ffffff 36%);" +
       "  outline-offset:2px;" +
       "  border-radius:4px;" +
