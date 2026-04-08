@@ -3716,18 +3716,18 @@
       "  line-height:1.4;" +
       "}" +
       ".beliv-row-suggested-prompts{" +
-      "  justify-content:flex-start;" +
+      "  justify-content:flex-end;" +
       "  margin-bottom:12px;" +
       "}" +
       ".beliv-suggested-prompts{" +
       "  width:min(100%,560px);" +
       "  display:flex;" +
       "  flex-direction:column;" +
-      "  align-items:stretch;" +
+      "  align-items:flex-end;" +
       "  gap:8px;" +
       "}" +
       ".beliv-suggested-prompt{" +
-      "  width:100%;" +
+      "  width:fit-content;" +
       "  max-width:100%;" +
       "  border:1px solid color-mix(in srgb,var(--beliv-accent) 22%,#d8e5f2 78%);" +
       "  border-left-width:4px;" +
@@ -4225,7 +4225,8 @@
       "    gap:8px;" +
       "  }" +
       "  .beliv-suggested-prompt{" +
-      "    width:100%;" +
+      "    width:fit-content;" +
+      "    max-width:100%;" +
       "    min-height:46px;" +
       "    padding:10px 14px;" +
       "    font-size:13px;" +
