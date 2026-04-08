@@ -3488,34 +3488,45 @@
       "  margin-bottom:12px;" +
       "}" +
       ".beliv-suggested-prompts{" +
-      "  width:min(100%,580px);" +
+      "  width:min(100%,600px);" +
       "  display:flex;" +
       "  flex-direction:column;" +
       "  align-items:stretch;" +
-      "  gap:8px;" +
+      "  gap:10px;" +
       "}" +
       ".beliv-suggested-prompt{" +
       "  width:100%;" +
       "  max-width:100%;" +
-      "  border:1px solid color-mix(in srgb,var(--beliv-accent) 24%,#d4e3f2 76%);" +
-      "  border-radius:14px;" +
-      "  background:linear-gradient(180deg,color-mix(in srgb,#eef6ff 84%,var(--beliv-accent) 16%) 0,color-mix(in srgb,#e2eef9 74%,var(--beliv-accent) 26%) 100%);" +
+      "  border:1px solid color-mix(in srgb,var(--beliv-accent) 34%,#d7e6f4 66%);" +
+      "  border-radius:18px;" +
+      "  background:linear-gradient(180deg,color-mix(in srgb,#f3f9ff 64%,var(--beliv-accent-light) 36%) 0,color-mix(in srgb,#dfeefb 52%,var(--beliv-accent) 48%) 100%);" +
       "  color:var(--beliv-accent-dark);" +
-      "  padding:10px 42px 10px 13px;" +
-      "  font-size:13px;" +
-      "  line-height:1.4;" +
+      "  padding:12px 54px 12px 20px;" +
+      "  min-height:54px;" +
+      "  font-size:14px;" +
+      "  line-height:1.35;" +
       "  font-weight:700;" +
       "  text-align:left;" +
       "  cursor:pointer;" +
       "  position:relative;" +
-      "  box-shadow:0 7px 16px rgba(36,67,106,0.08),inset 0 1px 0 rgba(255,255,255,0.88);" +
+      "  box-shadow:0 12px 26px rgba(24,77,161,0.12),inset 0 1px 0 rgba(255,255,255,0.9);" +
       "  transition:transform .16s ease,border-color .16s ease,color .16s ease,background .16s ease,box-shadow .16s ease;" +
       "  overflow-wrap:anywhere;" +
+      "  overflow:hidden;" +
+      "}" +
+      ".beliv-suggested-prompt::before{" +
+      "  content:'';" +
+      "  position:absolute;" +
+      "  left:0;" +
+      "  top:0;" +
+      "  bottom:0;" +
+      "  width:6px;" +
+      "  background:linear-gradient(180deg,var(--beliv-accent-light) 0,var(--beliv-accent) 52%,var(--beliv-accent-dark) 100%);" +
       "}" +
       ".beliv-suggested-prompt::after{" +
-      "  content:'\\203A';" +
+      "  content:'\\2192';" +
       "  position:absolute;" +
-      "  right:14px;" +
+      "  right:16px;" +
       "  top:50%;" +
       "  transform:translateY(-50%);" +
       "  color:var(--beliv-accent);" +
@@ -3525,14 +3536,14 @@
       "  transition:transform .16s ease,color .16s ease;" +
       "}" +
       ".beliv-suggested-prompt:hover,.beliv-suggested-prompt:focus-visible{" +
-      "  transform:translateX(1px);" +
-      "  border-color:color-mix(in srgb,var(--beliv-accent) 50%,#ffffff 50%);" +
+      "  transform:translateY(-1px);" +
+      "  border-color:color-mix(in srgb,var(--beliv-accent) 58%,#ffffff 42%);" +
       "  color:var(--beliv-accent-dark);" +
-      "  background:linear-gradient(180deg,color-mix(in srgb,#edf5ff 72%,var(--beliv-accent) 28%) 0,color-mix(in srgb,#d7eafb 56%,var(--beliv-accent) 44%) 100%);" +
-      "  box-shadow:0 10px 22px rgba(36,67,106,0.12),inset 0 1px 0 rgba(255,255,255,0.9);" +
+      "  background:linear-gradient(180deg,color-mix(in srgb,#ebf5ff 44%,var(--beliv-accent-light) 56%) 0,color-mix(in srgb,#d4e8fb 34%,var(--beliv-accent) 66%) 100%);" +
+      "  box-shadow:0 16px 30px rgba(24,77,161,0.16),inset 0 1px 0 rgba(255,255,255,0.92);" +
       "}" +
       ".beliv-suggested-prompt:hover::after,.beliv-suggested-prompt:focus-visible::after{" +
-      "  transform:translateY(-50%) translateX(2px);" +
+      "  transform:translateY(-50%) translateX(3px);" +
       "  color:var(--beliv-accent-dark);" +
       "}" +
       ".beliv-suggested-prompt:focus-visible{" +
@@ -3759,19 +3770,22 @@
       "  border-color:#8e7346;" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-suggested-prompt{" +
-      "  background:linear-gradient(180deg,color-mix(in srgb,#1a2d44 84%,var(--beliv-accent) 16%) 0,color-mix(in srgb,#14263b 74%,var(--beliv-accent) 26%) 100%);" +
-      "  color:#eef5fc;" +
-      "  border-color:#426281;" +
-      "  box-shadow:0 8px 18px rgba(0,0,0,0.28),inset 0 1px 0 rgba(255,255,255,0.06);" +
+      "  background:linear-gradient(180deg,color-mix(in srgb,#1a2d44 72%,var(--beliv-accent) 28%) 0,color-mix(in srgb,#13263b 58%,var(--beliv-accent) 42%) 100%);" +
+      "  color:#f3f8fd;" +
+      "  border-color:color-mix(in srgb,var(--beliv-accent-light) 34%,#395879 66%);" +
+      "  box-shadow:0 12px 24px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.08);" +
+      "}" +
+      ".beliv-shell.beliv-theme-dark .beliv-suggested-prompt::before{" +
+      "  background:linear-gradient(180deg,#78c6ff 0,var(--beliv-accent-light) 38%,var(--beliv-accent) 72%,var(--beliv-accent-dark) 100%);" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-suggested-prompt::after{" +
       "  color:var(--beliv-accent-light);" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-suggested-prompt:hover,.beliv-shell.beliv-theme-dark .beliv-suggested-prompt:focus-visible{" +
-      "  border-color:color-mix(in srgb,var(--beliv-accent-light) 46%,#ffffff 54%);" +
+      "  border-color:color-mix(in srgb,var(--beliv-accent-light) 58%,#ffffff 42%);" +
       "  color:#ffffff;" +
-      "  background:linear-gradient(180deg,color-mix(in srgb,#18304b 74%,var(--beliv-accent) 26%) 0,color-mix(in srgb,#13283f 62%,var(--beliv-accent) 38%) 100%);" +
-      "  box-shadow:0 10px 22px rgba(0,0,0,0.34),0 0 0 1px rgba(71,156,255,0.12);" +
+      "  background:linear-gradient(180deg,color-mix(in srgb,#163451 52%,var(--beliv-accent-light) 48%) 0,color-mix(in srgb,#112a42 40%,var(--beliv-accent) 60%) 100%);" +
+      "  box-shadow:0 16px 30px rgba(0,0,0,0.34),0 0 0 1px rgba(71,156,255,0.14);" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-suggested-prompt:hover::after,.beliv-shell.beliv-theme-dark .beliv-suggested-prompt:focus-visible::after{" +
       "  color:#ffffff;" +
@@ -4009,8 +4023,13 @@
       "  }" +
       "  .beliv-suggested-prompt{" +
       "    width:100%;" +
-      "    padding:10px 12px;" +
-      "    font-size:12px;" +
+      "    min-height:48px;" +
+      "    padding:10px 44px 10px 16px;" +
+      "    font-size:13px;" +
+      "  }" +
+      "  .beliv-suggested-prompt::after{" +
+      "    right:14px;" +
+      "    font-size:17px;" +
       "  }" +
       "  .beliv-chat-form{" +
       "    gap:6px;" +
