@@ -3714,16 +3714,16 @@
       "  .beliv-shell.beliv-right .beliv-panel{right:8px;}" +
       "  .beliv-shell.beliv-left .beliv-panel{left:8px;}" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
-      "    left:max(8px,env(safe-area-inset-left)) !important;" +
-      "    right:max(8px,env(safe-area-inset-right)) !important;" +
-      "    top:max(16px,calc(env(safe-area-inset-top) + 8px));" +
-      "    bottom:max(8px,env(safe-area-inset-bottom));" +
-      "    width:auto;" +
-      "    height:auto;" +
-      "    transform:translateY(22px) translateX(var(--beliv-hover-shift-x)) rotateY(var(--beliv-hover-tilt-y));" +
+      "    top:50%;" +
+      "    left:50% !important;" +
+      "    right:auto !important;" +
+      "    bottom:auto;" +
+      "    width:min(960px,calc(100vw - 16px));" +
+      "    height:min(84vh,780px);" +
+      "    transform:translate(-50%,-46%) scale(.985) translateX(var(--beliv-hover-shift-x)) rotateY(var(--beliv-hover-tilt-y));" +
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-modal.beliv-open .beliv-panel{" +
-      "    transform:translateY(0) translateX(var(--beliv-hover-shift-x)) rotateY(var(--beliv-hover-tilt-y));" +
+      "    transform:translate(-50%,-50%) scale(1) translateX(var(--beliv-hover-shift-x)) rotateY(var(--beliv-hover-tilt-y));" +
       "  }" +
       "}" +
       "@media (max-width:820px){" +
@@ -3757,12 +3757,8 @@
       "    border-radius:18px;" +
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
-      "    left:max(6px,env(safe-area-inset-left)) !important;" +
-      "    right:max(6px,env(safe-area-inset-right)) !important;" +
-      "    top:max(16px,calc(env(safe-area-inset-top) + 8px));" +
-      "    bottom:max(6px,env(safe-area-inset-bottom));" +
-      "    width:auto;" +
-      "    height:auto;" +
+      "    width:min(960px,calc(100vw - 12px));" +
+      "    height:min(86vh,780px);" +
       "    border-radius:18px;" +
       "  }" +
       "}" +
@@ -3834,10 +3830,8 @@
       "    border-radius:16px;" +
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
-      "    left:max(4px,env(safe-area-inset-left)) !important;" +
-      "    right:max(4px,env(safe-area-inset-right)) !important;" +
-      "    top:max(24px,calc(env(safe-area-inset-top) + 8px));" +
-      "    bottom:max(4px,env(safe-area-inset-bottom));" +
+      "    width:min(960px,calc(100vw - 8px));" +
+      "    height:min(88vh,780px);" +
       "    border-radius:16px;" +
       "  }" +
       "  .beliv-chat-form{" +
