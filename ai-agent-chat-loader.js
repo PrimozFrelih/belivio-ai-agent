@@ -3499,6 +3499,7 @@
       "  max-width:100%;" +
       "  border:1px solid color-mix(in srgb,var(--beliv-accent) 22%,#d8e5f2 78%);" +
       "  border-left-width:4px;" +
+      "  border-left-style:dashed;" +
       "  border-left-color:color-mix(in srgb,var(--beliv-accent) 72%,var(--beliv-accent-dark) 28%);" +
       "  border-radius:8px;" +
       "  background:color-mix(in srgb,#f7fbff 88%,var(--beliv-accent) 12%);" +
