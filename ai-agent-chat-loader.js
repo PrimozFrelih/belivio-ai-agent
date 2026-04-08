@@ -3457,25 +3457,25 @@
       "  max-width:100%;" +
       "  display:flex;" +
       "  align-items:flex-start;" +
-      "  gap:10px;" +
+      "  gap:8px;" +
       "  background:linear-gradient(180deg,#fffaf1 0,#fff6e9 100%);" +
       "  color:#7b6b4a;" +
       "  border:1px solid #efddb9;" +
       "  border-radius:15px;" +
-      "  padding:11px 12px;" +
+      "  padding:9px 12px;" +
       "}" +
       ".beliv-disclaimer-icon{" +
-      "  width:22px;" +
-      "  height:22px;" +
-      "  flex:0 0 22px;" +
-      "  border-radius:7px;" +
+      "  width:18px;" +
+      "  height:18px;" +
+      "  flex:0 0 18px;" +
+      "  border-radius:6px;" +
       "  background:#ead7b1;" +
       "  color:#8a6d35;" +
-      "  font-size:14px;" +
+      "  font-size:12px;" +
       "  font-weight:800;" +
       "  text-align:center;" +
-      "  line-height:22px;" +
-      "  margin-top:1px;" +
+      "  line-height:18px;" +
+      "  margin-top:0;" +
       "}" +
       ".beliv-disclaimer-text{" +
       "  flex:1;" +
