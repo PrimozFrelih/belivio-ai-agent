@@ -31,6 +31,11 @@
     popupButtonLabel: "Send",
     welcomeMessage: "Hi! I can help you find information from this website.",
     disclaimer: "",
+    suggestedPrompts: [
+      "Kak\u0161ni so pogoji sodelovanja?",
+      "Kako sodelujete z ekipami v podjetju?",
+      "Kak\u0161en je va\u0161 na\u010din uvedbe AI orodij v poslovanje?"
+    ],
     contactEmail: "primoz.frelih@agital.si",
     contactPhone: "00 386 41 980 991",
     accentColor: "#1877f2",
@@ -111,6 +116,14 @@
     popupButtonLabel: normalizeText(runtimeConfig.popupButtonLabel, DEFAULT_CONFIG.popupButtonLabel),
     welcomeMessage: normalizeText(runtimeConfig.welcomeMessage, DEFAULT_CONFIG.welcomeMessage),
     disclaimer: normalizeOptionalText(runtimeConfig.disclaimer, ""),
+    suggestedPrompts: normalizePromptList(
+      Object.prototype.hasOwnProperty.call(runtimeConfig, "suggestedPrompts")
+        ? runtimeConfig.suggestedPrompts
+        : Object.prototype.hasOwnProperty.call(runtimeConfig, "preloadedPrompts")
+          ? runtimeConfig.preloadedPrompts
+          : runtimeConfig.quickPrompts,
+      DEFAULT_CONFIG.suggestedPrompts
+    ),
     contactEmail: normalizeEmail(runtimeConfig.contactEmail || runtimeConfig.email, ""),
     contactPhone: normalizePhone(runtimeConfig.contactPhone || runtimeConfig.phone, ""),
     accentColor: resolvedAccentColor,
@@ -369,6 +382,7 @@
       state.hasWelcomed = true;
       appendMessage("assistant", config.welcomeMessage);
     }
+    syncSuggestedPrompts();
 
     if (shouldAnimateFromLauncher && launcherRect) {
       runPanelOpenAnimationFromLauncher(launcherRect);
@@ -1314,6 +1328,55 @@
     refs.messages.insertBefore(row, refs.messages.firstChild || null);
   }
 
+  function syncSuggestedPrompts() {
+    if (!refs.messages) {
+      return;
+    }
+
+    var staleRows = refs.messages.querySelectorAll(".beliv-row-suggested-prompts");
+    var i;
+    for (i = 0; i < staleRows.length; i += 1) {
+      if (staleRows[i].parentNode) {
+        staleRows[i].parentNode.removeChild(staleRows[i]);
+      }
+    }
+
+    if (state.messages.length || state.isSending || !config.suggestedPrompts.length) {
+      return;
+    }
+
+    var row = document.createElement("div");
+    row.className = "beliv-row beliv-row-suggested-prompts";
+
+    var list = document.createElement("div");
+    list.className = "beliv-suggested-prompts";
+
+    for (i = 0; i < config.suggestedPrompts.length; i += 1) {
+      var prompt = config.suggestedPrompts[i];
+      if (!prompt) {
+        continue;
+      }
+      var button = document.createElement("button");
+      button.type = "button";
+      button.className = "beliv-suggested-prompt";
+      button.textContent = prompt;
+      button.setAttribute("aria-label", prompt);
+      button.addEventListener("click", function (event) {
+        var value = event && event.currentTarget ? event.currentTarget.textContent || "" : "";
+        sendPrompt(value);
+      });
+      list.appendChild(button);
+    }
+
+    if (!list.children.length) {
+      return;
+    }
+
+    row.appendChild(list);
+    refs.messages.appendChild(row);
+    scrollMessagesToBottom();
+  }
+
   async function sendPrompt(prompt) {
     if (state.isSending || typeof prompt !== "string") {
       return;
@@ -1326,6 +1389,7 @@
     applyContextOverrides(readLiveContextOverrides());
     openModal();
     pushMessage("user", normalizedPrompt);
+    syncSuggestedPrompts();
     appendMessage("user", normalizedPrompt);
 
     setSending(true);
@@ -1891,6 +1955,21 @@
           if (Object.prototype.hasOwnProperty.call(nextContext, "disclaimer")) {
             window.BelivAIAgentConfig.disclaimer = nextContext.disclaimer;
           }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "suggestedPrompts")) {
+            window.BelivAIAgentConfig.suggestedPrompts = nextContext.suggestedPrompts;
+            window.BelivAIAgentConfig.preloadedPrompts = nextContext.suggestedPrompts;
+            window.BelivAIAgentConfig.quickPrompts = nextContext.suggestedPrompts;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "preloadedPrompts")) {
+            window.BelivAIAgentConfig.suggestedPrompts = nextContext.preloadedPrompts;
+            window.BelivAIAgentConfig.preloadedPrompts = nextContext.preloadedPrompts;
+            window.BelivAIAgentConfig.quickPrompts = nextContext.preloadedPrompts;
+          }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "quickPrompts")) {
+            window.BelivAIAgentConfig.suggestedPrompts = nextContext.quickPrompts;
+            window.BelivAIAgentConfig.preloadedPrompts = nextContext.quickPrompts;
+            window.BelivAIAgentConfig.quickPrompts = nextContext.quickPrompts;
+          }
           if (Object.prototype.hasOwnProperty.call(nextContext, "contactEmail")) {
             window.BelivAIAgentConfig.contactEmail = nextContext.contactEmail;
             window.BelivAIAgentConfig.email = nextContext.contactEmail;
@@ -1982,6 +2061,12 @@
       popupButtonLabel: liveConfig.popupButtonLabel,
       welcomeMessage: liveConfig.welcomeMessage,
       disclaimer: liveConfig.disclaimer,
+      suggestedPrompts:
+        Object.prototype.hasOwnProperty.call(liveConfig, "suggestedPrompts")
+          ? liveConfig.suggestedPrompts
+          : Object.prototype.hasOwnProperty.call(liveConfig, "preloadedPrompts")
+            ? liveConfig.preloadedPrompts
+            : liveConfig.quickPrompts,
       contactEmail: liveConfig.contactEmail || liveConfig.email,
       contactPhone: liveConfig.contactPhone || liveConfig.phone,
       brandLabel: liveConfig.brandLabel,
@@ -2068,6 +2153,14 @@
     var nextPopupButtonLabel = normalizeText(nextContext.popupButtonLabel, config.popupButtonLabel);
     var nextWelcomeMessage = normalizeText(nextContext.welcomeMessage, config.welcomeMessage);
     var nextDisclaimer = normalizeOptionalText(nextContext.disclaimer, config.disclaimer);
+    var nextSuggestedPrompts = normalizePromptList(
+      Object.prototype.hasOwnProperty.call(nextContext, "suggestedPrompts")
+        ? nextContext.suggestedPrompts
+        : Object.prototype.hasOwnProperty.call(nextContext, "preloadedPrompts")
+          ? nextContext.preloadedPrompts
+          : nextContext.quickPrompts,
+      config.suggestedPrompts
+    );
     var nextContactEmail = normalizeEmail(
       Object.prototype.hasOwnProperty.call(nextContext, "contactEmail")
         ? nextContext.contactEmail
@@ -2115,6 +2208,7 @@
     config.brandLabel = nextBrandLabel;
     config.brandLabelHtml = nextBrandLabelHtml;
     config.disclaimer = nextDisclaimer;
+    config.suggestedPrompts = nextSuggestedPrompts;
     config.contactEmail = nextContactEmail;
     config.contactPhone = nextContactPhone;
     config.currentUrl = nextCurrentUrl;
@@ -2158,6 +2252,7 @@
     syncHeaderContactActions();
     applyColorVariables();
     syncDisclaimerMessage();
+    syncSuggestedPrompts();
     syncHostFavicon();
     syncPositionClass();
     syncThemeClass();
@@ -2451,6 +2546,34 @@
       return fallbackNumber;
     }
     return number;
+  }
+
+  function normalizePromptList(value, fallback) {
+    var source = value;
+    if (typeof source === "string") {
+      source = source.split(/\r?\n|\|/);
+    }
+
+    var list = Array.isArray(source) ? source : fallback;
+    if (typeof list === "string") {
+      list = list.split(/\r?\n|\|/);
+    }
+    if (!Array.isArray(list)) {
+      list = [];
+    }
+
+    var normalized = [];
+    var seen = {};
+    var i;
+    for (i = 0; i < list.length; i += 1) {
+      var prompt = normalizePromptInput(list[i]);
+      if (!prompt || seen[prompt]) {
+        continue;
+      }
+      seen[prompt] = true;
+      normalized.push(prompt);
+    }
+    return normalized;
   }
 
   function normalizeEmail(value, fallback) {
@@ -3360,6 +3483,42 @@
       "  font-size:13px;" +
       "  line-height:1.4;" +
       "}" +
+      ".beliv-row-suggested-prompts{" +
+      "  justify-content:flex-start;" +
+      "  margin-bottom:12px;" +
+      "}" +
+      ".beliv-suggested-prompts{" +
+      "  width:100%;" +
+      "  display:flex;" +
+      "  flex-wrap:wrap;" +
+      "  gap:10px;" +
+      "}" +
+      ".beliv-suggested-prompt{" +
+      "  max-width:100%;" +
+      "  border:1px solid rgba(194,213,235,0.96);" +
+      "  border-radius:16px;" +
+      "  background:linear-gradient(180deg,rgba(255,255,255,0.98) 0,rgba(247,251,255,0.96) 100%);" +
+      "  color:var(--beliv-text-accent-dark);" +
+      "  padding:11px 14px;" +
+      "  font-size:13px;" +
+      "  line-height:1.35;" +
+      "  font-weight:700;" +
+      "  text-align:left;" +
+      "  cursor:pointer;" +
+      "  box-shadow:0 8px 18px rgba(36,67,106,0.1),inset 0 1px 0 rgba(255,255,255,0.82);" +
+      "  transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease,color .16s ease,background .16s ease;" +
+      "  overflow-wrap:anywhere;" +
+      "}" +
+      ".beliv-suggested-prompt:hover,.beliv-suggested-prompt:focus-visible{" +
+      "  transform:translateY(-1px);" +
+      "  border-color:color-mix(in srgb,var(--beliv-accent) 62%,#ffffff 38%);" +
+      "  color:var(--beliv-accent-dark);" +
+      "  box-shadow:0 10px 22px rgba(24,77,161,0.14),inset 0 1px 0 rgba(255,255,255,0.88);" +
+      "}" +
+      ".beliv-suggested-prompt:focus-visible{" +
+      "  outline:2px solid rgba(24,119,242,0.22);" +
+      "  outline-offset:2px;" +
+      "}" +
       ".beliv-chat-form{" +
       "  display:flex;" +
       "  gap:10px;" +
@@ -3578,6 +3737,17 @@
       "  background:#3c311c;" +
       "  color:#f3dfba;" +
       "  border-color:#8e7346;" +
+      "}" +
+      ".beliv-shell.beliv-theme-dark .beliv-suggested-prompt{" +
+      "  background:linear-gradient(180deg,#16263b 0,#132135 100%);" +
+      "  color:#e5edf6;" +
+      "  border-color:#30465f;" +
+      "  box-shadow:0 8px 18px rgba(0,0,0,0.32),inset 0 1px 0 rgba(255,255,255,0.06);" +
+      "}" +
+      ".beliv-shell.beliv-theme-dark .beliv-suggested-prompt:hover,.beliv-shell.beliv-theme-dark .beliv-suggested-prompt:focus-visible{" +
+      "  border-color:color-mix(in srgb,var(--beliv-accent-light) 58%,#ffffff 42%);" +
+      "  color:#ffffff;" +
+      "  box-shadow:0 10px 22px rgba(0,0,0,0.38),0 0 0 1px rgba(71,156,255,0.18);" +
       "}" +
       ".beliv-shell.beliv-theme-dark .beliv-disclaimer-icon{" +
       "  background:#be9957;" +
@@ -3806,6 +3976,14 @@
       "  }" +
       "  .beliv-bubble{" +
       "    font-size:15px;" +
+      "  }" +
+      "  .beliv-suggested-prompts{" +
+      "    gap:8px;" +
+      "  }" +
+      "  .beliv-suggested-prompt{" +
+      "    width:100%;" +
+      "    padding:10px 12px;" +
+      "    font-size:12px;" +
       "  }" +
       "  .beliv-chat-form{" +
       "    gap:6px;" +

@@ -19,6 +19,7 @@ function extractFunctionSource(source, functionName) {
 
 function createSandbox() {
   const sandbox = {
+    MAX_INPUT_LENGTH: 200,
     URL,
     window: {
       location: {
@@ -68,6 +69,9 @@ test('default config includes agital defaults', () => {
   assert.match(loaderSource, /contactPhone:\s*"00 386 41 980 991"/);
   assert.match(loaderSource, /PLACEHOLDER_ROTATE_INTERVAL_MS\s*=\s*2000/);
   assert.match(loaderSource, /brandLabelHtml:\s*false/);
+  assert.match(loaderSource, /suggestedPrompts:\s*\[/);
+  assert.match(loaderSource, /Kak\\u0161ni so pogoji sodelovanja\?/);
+  assert.match(loaderSource, /Kako sodelujete z ekipami v podjetju\?/);
 });
 
 test('chat links are configured for top-level navigation, not blank tab', () => {
@@ -149,6 +153,20 @@ test('placeholder sequence normalizer keeps order and removes empty values', () 
   assert.equal(result[0], 'First');
   assert.equal(result[1], 'Second');
   assert.equal(result[2], 'Third');
+});
+
+test('suggested prompt normalizer trims, deduplicates, and caps length', () => {
+  const sandbox = loadFunctions(['normalizePromptInput', 'normalizePromptList']);
+  const result = sandbox.normalizePromptList(
+    ['  First prompt  ', '', 'Second prompt', 'First prompt', 'x'.repeat(240)],
+    ['Fallback']
+  );
+
+  assert.equal(Array.isArray(result), true);
+  assert.equal(result.length, 3);
+  assert.equal(result[0], 'First prompt');
+  assert.equal(result[1], 'Second prompt');
+  assert.equal(result[2].length, 200);
 });
 
 test('brand label supports optional safe html rendering and top-level links', () => {
