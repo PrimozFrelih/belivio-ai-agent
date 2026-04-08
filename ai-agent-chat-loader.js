@@ -25,6 +25,7 @@
     placeholder: "Ask AI about this page...",
     launcherPlaceholder: "Ask AI about this page...",
     placeholderSequence: [],
+    launcherFlashInterval: 0,
     popupPlaceholder: "Type your follow-up...",
     launcherButtonLabel: "Ask",
     popupButtonLabel: "Send",
@@ -98,6 +99,10 @@
     placeholder: resolvedLauncherPlaceholderPrimary,
     launcherPlaceholder: resolvedLauncherPlaceholderPrimary,
     placeholderSequence: resolvedLauncherPlaceholderSequence,
+    launcherFlashInterval: normalizeLauncherFlashInterval(
+      runtimeConfig.launcherFlashInterval,
+      DEFAULT_CONFIG.launcherFlashInterval
+    ),
     popupPlaceholder: normalizeText(runtimeConfig.popupPlaceholder, DEFAULT_CONFIG.popupPlaceholder),
     launcherButtonLabel: normalizeText(
       runtimeConfig.launcherButtonLabel,
@@ -141,6 +146,8 @@
     messages: []
   };
   var chatOpenFlashTimer = null;
+  var launcherFlashRepeatTimer = null;
+  var launcherFlashClassTimer = null;
   var placeholderRotateTimer = null;
   var placeholderRotateIndex = 0;
 
@@ -212,10 +219,10 @@
       "        </div>" +
       '        <div class="beliv-header-actions">' +
       '          <a class="beliv-contact-link beliv-contact-email" aria-label="Send email">' +
-      '            <span class="beliv-contact-icon" aria-hidden="true">&#9993;</span>' +
+      '            <span class="beliv-contact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path fill="currentColor" d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z"/></svg></span>' +
       "          </a>" +
       '          <a class="beliv-contact-link beliv-contact-phone" aria-label="Call phone">' +
-      '            <span class="beliv-contact-icon" aria-hidden="true">&#9990;</span>' +
+      '            <span class="beliv-contact-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path fill="currentColor" d="M19.23 15.26 16.69 14.97c-.61-.07-1.21.14-1.64.57l-1.84 1.84a15.07 15.07 0 0 1-6.59-6.59l1.84-1.84c.43-.43.64-1.03.57-1.64l-.29-2.52A1.99 1.99 0 0 0 6.76 3H4.03C2.92 3 2 3.92 2.05 5.03c.4 9.06 7.86 16.52 16.92 16.92 1.11.05 2.03-.87 2.03-1.98v-2.73a1.99 1.99 0 0 0-1.77-1.98Z"/></svg></span>' +
       "          </a>" +
       '          <button class="beliv-close" type="button" aria-label="Close chat">&times;</button>' +
       "        </div>" +
@@ -272,7 +279,7 @@
 
     bindEvents(root);
     bindPublicApi();
-    triggerLauncherIntroFlash();
+    syncLauncherFlashSchedule(true);
     autoFocusLauncherOnMount();
   }
 
@@ -408,7 +415,7 @@
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
       return true;
     }
-    return !window.matchMedia("(max-width: 640px)").matches;
+    return !window.matchMedia("(max-width: 900px)").matches;
   }
 
   function renderChatButtonIdle() {
@@ -691,32 +698,72 @@
     }, 50);
   }
 
+  function runLauncherIntroFlash() {
+    if (!refs.launcherForm || config.mode !== "fullcenter") {
+      return;
+    }
+
+    if (launcherFlashClassTimer) {
+      window.clearTimeout(launcherFlashClassTimer);
+      launcherFlashClassTimer = null;
+    }
+
+    refs.launcherForm.classList.remove("beliv-launcher-intro-flash");
+    void refs.launcherForm.offsetWidth;
+    refs.launcherForm.classList.add("beliv-launcher-intro-flash");
+    launcherFlashClassTimer = window.setTimeout(function () {
+      if (refs.launcherForm) {
+        refs.launcherForm.classList.remove("beliv-launcher-intro-flash");
+      }
+      launcherFlashClassTimer = null;
+    }, 2500);
+  }
+
   function triggerLauncherIntroFlash() {
     if (!refs.launcherForm || config.mode !== "fullcenter") {
       return;
     }
 
-    var runFlash = function () {
-      if (!refs.launcherForm || config.mode !== "fullcenter") {
-        return;
-      }
-      refs.launcherForm.classList.remove("beliv-launcher-intro-flash");
-      void refs.launcherForm.offsetWidth;
-      refs.launcherForm.classList.add("beliv-launcher-intro-flash");
-      window.setTimeout(function () {
-        if (refs.launcherForm) {
-          refs.launcherForm.classList.remove("beliv-launcher-intro-flash");
-        }
-      }, 2500);
-    };
-
     if (typeof window.requestAnimationFrame === "function") {
       window.requestAnimationFrame(function () {
-        window.setTimeout(runFlash, 180);
+        window.setTimeout(runLauncherIntroFlash, 180);
       });
       return;
     }
-    window.setTimeout(runFlash, 220);
+    window.setTimeout(runLauncherIntroFlash, 220);
+  }
+
+  function stopLauncherFlashSchedule(clearActiveFlash) {
+    if (launcherFlashRepeatTimer) {
+      window.clearInterval(launcherFlashRepeatTimer);
+      launcherFlashRepeatTimer = null;
+    }
+    if (!clearActiveFlash) {
+      return;
+    }
+    if (launcherFlashClassTimer) {
+      window.clearTimeout(launcherFlashClassTimer);
+      launcherFlashClassTimer = null;
+    }
+    if (refs.launcherForm) {
+      refs.launcherForm.classList.remove("beliv-launcher-intro-flash");
+    }
+  }
+
+  function syncLauncherFlashSchedule(runInitialFlash) {
+    stopLauncherFlashSchedule(config.mode !== "fullcenter");
+    if (!refs.launcherForm || config.mode !== "fullcenter") {
+      return;
+    }
+    if (runInitialFlash) {
+      triggerLauncherIntroFlash();
+    }
+    if (config.launcherFlashInterval <= 0) {
+      return;
+    }
+    launcherFlashRepeatTimer = window.setInterval(function () {
+      triggerLauncherIntroFlash();
+    }, config.launcherFlashInterval * 1000);
   }
 
   function triggerLauncherOpenEffects() {
@@ -1826,6 +1873,9 @@
             window.BelivAIAgentConfig.placeholderSequence = nextContext.placeholderList;
             window.BelivAIAgentConfig.placeholderList = nextContext.placeholderList;
           }
+          if (Object.prototype.hasOwnProperty.call(nextContext, "launcherFlashInterval")) {
+            window.BelivAIAgentConfig.launcherFlashInterval = nextContext.launcherFlashInterval;
+          }
           if (Object.prototype.hasOwnProperty.call(nextContext, "popupPlaceholder")) {
             window.BelivAIAgentConfig.popupPlaceholder = nextContext.popupPlaceholder;
           }
@@ -1926,6 +1976,7 @@
       placeholder: liveConfig.placeholder,
       launcherPlaceholder: liveConfig.launcherPlaceholder,
       placeholderSequence: liveConfig.placeholderSequence || liveConfig.placeholderList,
+      launcherFlashInterval: liveConfig.launcherFlashInterval,
       popupPlaceholder: liveConfig.popupPlaceholder,
       launcherButtonLabel: liveConfig.launcherButtonLabel,
       popupButtonLabel: liveConfig.popupButtonLabel,
@@ -2005,6 +2056,10 @@
       nextLauncherPlaceholderSequence = [nextLauncherPlaceholder];
     }
     nextLauncherPlaceholder = nextLauncherPlaceholderSequence[0];
+    var nextLauncherFlashInterval = normalizeLauncherFlashInterval(
+      nextContext.launcherFlashInterval,
+      config.launcherFlashInterval
+    );
     var nextPopupPlaceholder = normalizeText(nextContext.popupPlaceholder, config.popupPlaceholder);
     var nextLauncherButtonLabel = normalizeText(
       nextContext.launcherButtonLabel,
@@ -2053,6 +2108,7 @@
     config.placeholder = nextLauncherPlaceholder;
     config.launcherPlaceholder = nextLauncherPlaceholder;
     config.placeholderSequence = nextLauncherPlaceholderSequence;
+    config.launcherFlashInterval = nextLauncherFlashInterval;
     config.popupPlaceholder = nextPopupPlaceholder;
     config.launcherButtonLabel = nextLauncherButtonLabel;
     config.popupButtonLabel = nextPopupButtonLabel;
@@ -2107,6 +2163,7 @@
     syncThemeClass();
     syncModeClass();
     placeHostRoot();
+    syncLauncherFlashSchedule(previousMode !== "fullcenter" && config.mode === "fullcenter");
     if (config.mode !== "fullcenter" && previousMode === "fullcenter" && state.isOpen) {
       closeModal();
     }
@@ -2379,6 +2436,21 @@
     }
 
     return list;
+  }
+
+  function normalizeLauncherFlashInterval(value, fallback) {
+    var fallbackNumber = Number(fallback);
+    if (!isFinite(fallbackNumber) || fallbackNumber < 0) {
+      fallbackNumber = 0;
+    }
+    if (value === "" || value === null || typeof value === "undefined") {
+      return fallbackNumber;
+    }
+    var number = Number(value);
+    if (!isFinite(number) || number < 0) {
+      return fallbackNumber;
+    }
+    return number;
   }
 
   function normalizeEmail(value, fallback) {
@@ -2671,11 +2743,11 @@
       "  position:relative !important;" +
       "  inset:auto !important;" +
       "  width:min(100%,1020px);" +
-      "  margin:0 auto;" +
+      "  margin:16px auto 0;" +
       "  min-height:68px;" +
       "  border-radius:14px;" +
       "  border:2px solid transparent;" +
-      "  background:linear-gradient(180deg,rgba(251,252,255,0.98),rgba(247,250,255,0.98)) padding-box,linear-gradient(115deg,var(--beliv-accent),var(--beliv-accent-light),var(--beliv-accent-dark)) border-box;" +
+      "  background:linear-gradient(180deg,#ffffff,#ffffff) padding-box,linear-gradient(115deg,var(--beliv-accent),var(--beliv-accent-light),var(--beliv-accent-dark)) border-box;" +
       "  box-shadow:0 18px 44px rgba(7,29,62,0.2);" +
       "  animation:belivFramePulse 6.4s ease-in-out infinite;" +
       "}" +
@@ -3107,48 +3179,58 @@
       ".beliv-header-actions{" +
       "  display:flex;" +
       "  align-items:center;" +
-      "  gap:8px;" +
+      "  gap:10px;" +
       "  flex:0 0 auto;" +
       "}" +
       ".beliv-contact-link{" +
-      "  width:25px;" +
-      "  height:25px;" +
-      "  border-radius:999px;" +
+      "  width:36px;" +
+      "  height:36px;" +
+      "  border-radius:0;" +
       "  display:none;" +
       "  align-items:center;" +
       "  justify-content:center;" +
-      "  border:1px solid rgba(255,255,255,0.76);" +
+      "  border:0;" +
       "  background:transparent;" +
       "  color:#ffffff;" +
       "  text-decoration:none;" +
-      "  box-shadow:inset 0 1px 0 rgba(255,255,255,0.2);" +
-      "  transition:transform .16s ease,background .16s ease,border-color .16s ease;" +
+      "  box-shadow:none;" +
+      "  transition:transform .16s ease,color .16s ease,filter .16s ease;" +
       "}" +
       ".beliv-contact-link.beliv-visible{" +
       "  display:inline-flex;" +
       "}" +
-      ".beliv-contact-link:hover{" +
+      ".beliv-contact-link:hover,.beliv-contact-link:focus-visible,.beliv-contact-link:active{" +
       "  transform:translateY(-1px);" +
-      "  background:rgba(255,255,255,0.12);" +
+      "  background:transparent;" +
+      "  color:#62f08f;" +
+      "  filter:drop-shadow(0 2px 4px rgba(7,26,58,0.2));" +
       "}" +
       ".beliv-contact-link:focus-visible{" +
-      "  outline:2px solid rgba(255,255,255,0.82);" +
+      "  outline:2px solid rgba(93,240,139,0.82);" +
       "  outline-offset:2px;" +
       "}" +
       ".beliv-contact-icon{" +
-      "  font-size:13px;" +
-      "  line-height:1;" +
-      "  transform:translateY(-.5px);" +
+      "  width:25px;" +
+      "  height:25px;" +
+      "  display:flex;" +
+      "  align-items:center;" +
+      "  justify-content:center;" +
+      "  filter:drop-shadow(0 1px 2px rgba(7,26,58,0.16));" +
+      "}" +
+      ".beliv-contact-icon svg{" +
+      "  width:100%;" +
+      "  height:100%;" +
+      "  display:block;" +
       "}" +
       ".beliv-close{" +
       "  border:1px solid rgba(255,255,255,0.88);" +
-      "  background:rgba(255,255,255,0.98);" +
+      "  background:linear-gradient(180deg,rgba(255,255,255,1) 0%,rgba(244,248,255,0.98) 100%);" +
       "  color:var(--beliv-accent-dark);" +
-      "  width:25px;" +
-      "  height:25px;" +
+      "  width:36px;" +
+      "  height:36px;" +
       "  border-radius:999px;" +
       "  cursor:pointer;" +
-      "  font-size:15px;" +
+      "  font-size:30px;" +
       "  line-height:1;" +
       "  font-weight:700;" +
       "  flex:0 0 auto;" +
@@ -3156,12 +3238,18 @@
       "  align-items:center;" +
       "  justify-content:center;" +
       "  box-shadow:0 8px 20px rgba(7,26,58,0.24);" +
-      "  transition:transform .16s ease,background .16s ease;" +
+      "  transition:transform .16s ease,background .16s ease,color .16s ease,border-color .16s ease,box-shadow .16s ease;" +
       "}" +
-      ".beliv-close:hover{" +
+      ".beliv-close:hover,.beliv-close:focus-visible,.beliv-close:active{" +
       "  transform:translateY(-1px);" +
-      "  background:#f4f8ff;" +
-      "  box-shadow:0 10px 20px rgba(7,26,58,0.24);" +
+      "  background:linear-gradient(180deg,var(--beliv-accent-dark) 0%,color-mix(in srgb,var(--beliv-accent-dark) 86%,#0a4fb5 14%) 100%);" +
+      "  border-color:rgba(255,255,255,0.96);" +
+      "  color:#ffffff;" +
+      "  box-shadow:0 10px 22px rgba(7,26,58,0.28),inset 0 1px 0 rgba(255,255,255,0.1);" +
+      "}" +
+      ".beliv-close:focus-visible{" +
+      "  outline:2px solid rgba(255,255,255,0.86);" +
+      "  outline-offset:2px;" +
       "}" +
       ".beliv-messages{" +
       "  flex:1;" +
@@ -3430,7 +3518,7 @@
       "}" +
       ".beliv-shell.beliv-theme-dark.beliv-mode-fullcenter .beliv-launcher{" +
       "  border-color:transparent;" +
-      "  background:linear-gradient(180deg,rgba(8,18,34,0.94),rgba(9,24,42,0.94)) padding-box,linear-gradient(130deg,var(--beliv-accent-light),var(--beliv-accent),var(--beliv-accent-dark)) border-box;" +
+      "  background:linear-gradient(180deg,#ffffff,#ffffff) padding-box,linear-gradient(130deg,var(--beliv-accent-light),var(--beliv-accent),var(--beliv-accent-dark)) border-box;" +
       "  box-shadow:0 22px 48px rgba(0,0,0,0.55);" +
       "}" +
       ".beliv-shell.beliv-theme-dark.beliv-mode-fullcenter .beliv-launcher-flash{" +
@@ -3626,12 +3714,21 @@
       "  .beliv-shell.beliv-right .beliv-panel{right:8px;}" +
       "  .beliv-shell.beliv-left .beliv-panel{left:8px;}" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
-      "    width:calc(100vw - 18px);" +
-      "    height:min(90vh,calc(100vh - 16px));" +
+      "    left:max(8px,env(safe-area-inset-left)) !important;" +
+      "    right:max(8px,env(safe-area-inset-right)) !important;" +
+      "    top:max(16px,calc(env(safe-area-inset-top) + 8px));" +
+      "    bottom:max(8px,env(safe-area-inset-bottom));" +
+      "    width:auto;" +
+      "    height:auto;" +
+      "    transform:translateY(22px) translateX(var(--beliv-hover-shift-x)) rotateY(var(--beliv-hover-tilt-y));" +
+      "  }" +
+      "  .beliv-shell.beliv-mode-fullcenter .beliv-modal.beliv-open .beliv-panel{" +
+      "    transform:translateY(0) translateX(var(--beliv-hover-shift-x)) rotateY(var(--beliv-hover-tilt-y));" +
       "  }" +
       "}" +
       "@media (max-width:820px){" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher{" +
+      "    margin:14px auto 0;" +
       "    min-height:64px;" +
       "    border-radius:12px;" +
       "  }" +
@@ -3660,138 +3757,14 @@
       "    border-radius:18px;" +
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
-      "    width:calc(100vw - 12px);" +
-      "    height:min(92vh,calc(100vh - 12px));" +
-      "    border-radius:18px;" +
-      "  }" +
-      "}" +
-      "@media (max-width:640px){" +
-      "  .beliv-launcher{" +
-      "    left:max(8px,env(safe-area-inset-left)) !important;" +
-      "    right:max(8px,env(safe-area-inset-right)) !important;" +
-      "    width:auto;" +
-      "    bottom:max(10px,env(safe-area-inset-bottom));" +
-      "    border-radius:18px;" +
-      "  }" +
-      "  .beliv-launcher-input{" +
-      "    font-size:16px;" +
-      "    padding:15px 16px;" +
-      "  }" +
-      "  .beliv-launcher-submit{" +
-      "    min-width:90px;" +
-      "    padding:0 16px;" +
-      "    border-radius:14px;" +
-      "  }" +
-      "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher{" +
-      "    min-height:60px;" +
-      "    border-radius:10px;" +
-      "  }" +
-      "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-input{" +
-      "    font-size:16px;" +
-      "    padding:16px 75px 16px 14px;" +
-      "  }" +
-      "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-submit{" +
-      "    top:calc(50% - 22.5px);" +
-      "    bottom:auto;" +
-      "    width:56px;" +
-      "    min-width:56px;" +
-      "    height:45px;" +
-      "    right:6px;" +
-      "    border-radius:9px;" +
-      "  }" +
-      "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-agent{" +
-      "    width:14px;" +
-      "    height:14px;" +
-      "  }" +
-      "  .beliv-shell.beliv-mode-fullcenter .beliv-launcher-agent::before{" +
-      "    width:11px;" +
-      "    height:12px;" +
-      "  }" +
-      "  .beliv-panel{" +
       "    left:max(6px,env(safe-area-inset-left)) !important;" +
       "    right:max(6px,env(safe-area-inset-right)) !important;" +
-      "    top:max(24px,calc(env(safe-area-inset-top) + 8px));" +
+      "    top:max(16px,calc(env(safe-area-inset-top) + 8px));" +
       "    bottom:max(6px,env(safe-area-inset-bottom));" +
       "    width:auto;" +
       "    height:auto;" +
-      "    max-height:none;" +
-      "    border-radius:20px;" +
-      "    transform:translateY(22px) translateX(var(--beliv-hover-shift-x)) rotateY(var(--beliv-hover-tilt-y));" +
+      "    border-radius:18px;" +
       "  }" +
-      "  .beliv-modal.beliv-open .beliv-panel{" +
-      "    transform:translateY(0) translateX(var(--beliv-hover-shift-x)) rotateY(var(--beliv-hover-tilt-y));" +
-      "  }" +
-      "  .beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
-      "    left:max(6px,env(safe-area-inset-left)) !important;" +
-      "    right:max(6px,env(safe-area-inset-right)) !important;" +
-      "    top:max(24px,calc(env(safe-area-inset-top) + 8px));" +
-      "    bottom:max(6px,env(safe-area-inset-bottom));" +
-      "    width:auto;" +
-      "    height:auto;" +
-      "    border-radius:20px;" +
-      "    transform:translateY(22px) translateX(var(--beliv-hover-shift-x)) rotateY(var(--beliv-hover-tilt-y));" +
-      "  }" +
-      "  .beliv-shell.beliv-mode-fullcenter .beliv-modal.beliv-open .beliv-panel{" +
-      "    transform:translateY(0) translateX(var(--beliv-hover-shift-x)) rotateY(var(--beliv-hover-tilt-y));" +
-      "  }" +
-      "  .beliv-header{" +
-      "    padding:15px 14px 14px;" +
-      "  }" +
-      "  .beliv-heading{" +
-      "    gap:8px;" +
-      "  }" +
-      "  .beliv-site-favicon{" +
-      "    width:24px;" +
-      "    height:24px;" +
-      "    flex-basis:24px;" +
-      "    border-radius:6px;" +
-      "  }" +
-      "  .beliv-title{" +
-      "    font-size:18px;" +
-      "  }" +
-      "  .beliv-subtitle{" +
-      "    font-size:13px;" +
-      "  }" +
-      "  .beliv-header-actions{" +
-      "    gap:6px;" +
-      "  }" +
-      "  .beliv-contact-link{" +
-      "    width:25px;" +
-      "    height:25px;" +
-      "  }" +
-      "  .beliv-close{" +
-      "    width:25px;" +
-      "    height:25px;" +
-      "  }" +
-      "  .beliv-messages{" +
-      "    padding:12px;" +
-      "  }" +
-      "  .beliv-bubble{" +
-      "    max-width:92%;" +
-      "    font-size:16px;" +
-      "  }" +
-      "  .beliv-chat-form{" +
-      "    padding:11px max(10px,env(safe-area-inset-right)) calc(11px + env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));" +
-      "  }" +
-      "  .beliv-chat-input{" +
-      "    font-size:16px;" +
-      "    padding:13px 14px;" +
-      "  }" +
-      "  .beliv-chat-submit{" +
-      "    width:60px;" +
-      "    min-width:60px;" +
-      "    padding:0;" +
-      "  }" +
-      "  .beliv-brand{" +
-      "    padding:8px max(12px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));" +
-      "  }" +
-      "  .beliv-shell.beliv-mode-popupfloat .beliv-float-trigger{" +
-      "    width:58px;" +
-      "    height:58px;" +
-      "    bottom:10px;" +
-      "  }" +
-      "  .beliv-shell.beliv-mode-popupfloat.beliv-right .beliv-float-trigger{right:10px;}" +
-      "  .beliv-shell.beliv-mode-popupfloat.beliv-left .beliv-float-trigger{left:10px;}" +
       "}" +
       "@media (max-width:480px){" +
       "  .beliv-header{" +
@@ -3816,20 +3789,21 @@
       "    line-height:1.32;" +
       "  }" +
       "  .beliv-header-actions{" +
-      "    gap:5px;" +
+      "    gap:7px;" +
       "  }" +
       "  .beliv-contact-link{" +
-      "    width:22px;" +
-      "    height:22px;" +
+      "    width:31px;" +
+      "    height:31px;" +
       "  }" +
       "  .beliv-contact-icon{" +
-      "    font-size:12px;" +
+      "    width:21px;" +
+      "    height:21px;" +
       "  }" +
       "  .beliv-close{" +
-      "    width:22px;" +
-      "    height:22px;" +
+      "    width:31px;" +
+      "    height:31px;" +
       "    border-radius:999px;" +
-      "    font-size:14px;" +
+      "    font-size:25px;" +
       "  }" +
       "  .beliv-messages{" +
       "    padding:12px;" +

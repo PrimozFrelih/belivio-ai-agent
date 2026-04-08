@@ -302,6 +302,21 @@
         font-weight: 800;
         cursor: pointer;
         background: linear-gradient(140deg, #1877f2, #1663d8);
+        box-shadow: inset 0 0 0 0 transparent;
+        transition:
+          background 0.16s ease,
+          box-shadow 0.16s ease,
+          color 0.16s ease,
+          transform 0.16s ease;
+      }
+
+      .copy-btn.is-copied {
+        color: #1663d8;
+        background: #ffffff;
+        box-shadow:
+          inset 0 0 0 2px #1877f2,
+          0 8px 18px rgba(24, 119, 242, 0.16);
+        transform: translateY(-1px);
       }
 
       pre {
@@ -360,35 +375,6 @@
         }
         .snippet-head {
           align-items: flex-start;
-        }
-      }
-
-      @media (max-width: 640px) {
-        .page {
-          padding: 18px 12px 28px;
-        }
-        .hero h1 {
-          font-size: clamp(28px, 10vw, 40px);
-        }
-        .hero p {
-          font-size: 15px;
-          line-height: 1.45;
-        }
-        .card {
-          border-radius: 14px;
-        }
-        .controls h2,
-        .preview h2,
-        .snippet h2 {
-          font-size: 21px;
-        }
-        .mount {
-          min-height: 330px;
-          border-radius: 12px;
-        }
-        pre {
-          font-size: 12px;
-          padding: 10px;
         }
       }
 
@@ -466,6 +452,11 @@
             <div class="field">
               <label for="cfgLauncherBtnLabel">Launcher Button Label</label>
               <input id="cfgLauncherBtnLabel" type="text" value="Ask" />
+            </div>
+            <div class="field">
+              <label for="cfgLauncherFlashInterval">Field Flash Interval</label>
+              <input id="cfgLauncherFlashInterval" type="number" min="0" step="1" value="0" />
+              <p class="placeholder-help">0 = on load only. 1, 2, 3... = repeat every N seconds.</p>
             </div>
             <div class="field">
               <label for="cfgPopupBtnLabel">Popup Button Label</label>
@@ -614,6 +605,7 @@
           "Ask anything about this website...",
           "Need help with SEO optimization?"
         ],
+        launcherFlashInterval: 0,
         popupPlaceholder: "Continue the conversation...",
         launcherButtonLabel: "Ask",
         popupButtonLabel: "Send",
@@ -640,6 +632,8 @@
         var placeholderAddInput = document.getElementById("cfgPlaceholderAdd");
         var placeholderAddButton = document.getElementById("cfgPlaceholderAddBtn");
         var placeholderDragIndex = -1;
+        var copyResetTimer = null;
+        var copyButtonDefaultLabel = copyButton.textContent;
 
         function syncRuntimeCurrentUrl() {
           var runtimeUrl = window.location.href;
@@ -664,6 +658,15 @@
             return false;
           }
           return !!fallback;
+        }
+
+        function readNonNegativeNumberValue(id, fallback) {
+          var raw = readValue(id);
+          if (!raw) {
+            return fallback;
+          }
+          var number = Number(raw);
+          return isFinite(number) && number >= 0 ? number : fallback;
         }
 
         function buildPlaceholderSequence(sequence) {
@@ -823,6 +826,7 @@
             subtitle: readValue("cfgSubtitle"),
             placeholder: placeholder,
             placeholderSequence: placeholderSequence,
+            launcherFlashInterval: readNonNegativeNumberValue("cfgLauncherFlashInterval", 0),
             popupPlaceholder: readValue("cfgPopupPlaceholder"),
             launcherButtonLabel: readValue("cfgLauncherBtnLabel"),
             popupButtonLabel: readValue("cfgPopupBtnLabel"),
@@ -864,6 +868,7 @@
             currentUrl: config.currentUrl,
             placeholder: config.placeholder,
             placeholderSequence: config.placeholderSequence,
+            launcherFlashInterval: config.launcherFlashInterval,
             popupPlaceholder: config.popupPlaceholder,
             launcherButtonLabel: config.launcherButtonLabel,
             popupButtonLabel: config.popupButtonLabel,
@@ -914,6 +919,7 @@
               hostPlacement: config.hostPlacement,
               placeholder: config.placeholder,
               placeholderSequence: config.placeholderSequence,
+              launcherFlashInterval: config.launcherFlashInterval,
               popupPlaceholder: config.popupPlaceholder,
               launcherButtonLabel: config.launcherButtonLabel,
               popupButtonLabel: config.popupButtonLabel,
@@ -981,8 +987,20 @@
         async function copySnippet() {
           try {
             await navigator.clipboard.writeText(snippet.textContent);
+            copyButton.classList.add("is-copied");
+            copyButton.textContent = "Copied";
             copyStatus.textContent = "Embed snippet copied.";
+            if (copyResetTimer) {
+              window.clearTimeout(copyResetTimer);
+            }
+            copyResetTimer = window.setTimeout(function () {
+              copyButton.classList.remove("is-copied");
+              copyButton.textContent = copyButtonDefaultLabel;
+              copyResetTimer = null;
+            }, 3000);
           } catch (error) {
+            copyButton.classList.remove("is-copied");
+            copyButton.textContent = copyButtonDefaultLabel;
             copyStatus.textContent = "Copy failed. Select and copy manually.";
           }
         }
