@@ -188,3 +188,49 @@ test('config text supports sanitized html rendering in agent ui', () => {
   assert.match(loaderSource, /function shouldRenderConfigHtml\(/);
   assert.match(loaderSource, /linkClass:\s*"beliv-rich-link"/);
 });
+
+test('viewport height sync prefers visual viewport and updates mobile sizing variable', () => {
+  const sandbox = loadFunctions(['syncViewportHeight']);
+  const styleState = {};
+
+  sandbox.refs = {
+    shell: {
+      style: {
+        setProperty(name, value) {
+          styleState[name] = value;
+        }
+      }
+    }
+  };
+  sandbox.window.visualViewport = { height: 724.6 };
+  sandbox.window.innerHeight = 812;
+
+  sandbox.syncViewportHeight();
+
+  assert.equal(styleState['--beliv-viewport-height'], '725px');
+  assert.match(loaderSource, /--beliv-viewport-height:100vh/);
+  assert.match(loaderSource, /calc\(var\(--beliv-viewport-height,100vh\) - 82px\)/);
+  assert.match(loaderSource, /top:max\(8px,calc\(env\(safe-area-inset-top\) \+ 8px\)\)/);
+  assert.match(loaderSource, /bottom:max\(8px,calc\(env\(safe-area-inset-bottom\) \+ 8px\)\)/);
+  assert.match(loaderSource, /transform:translate\(-50%,0\) scale\(1\)/);
+});
+
+test('viewport height sync falls back to innerHeight when visual viewport is unavailable', () => {
+  const sandbox = loadFunctions(['syncViewportHeight']);
+  const styleState = {};
+
+  sandbox.refs = {
+    shell: {
+      style: {
+        setProperty(name, value) {
+          styleState[name] = value;
+        }
+      }
+    }
+  };
+  sandbox.window.innerHeight = 667;
+
+  sandbox.syncViewportHeight();
+
+  assert.equal(styleState['--beliv-viewport-height'], '667px');
+});

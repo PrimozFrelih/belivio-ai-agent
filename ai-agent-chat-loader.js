@@ -293,6 +293,7 @@
     syncPositionClass();
     syncThemeClass();
     syncModeClass();
+    syncViewportHeight();
     refs.titleText = root.querySelector(".beliv-title");
     refs.brandText = root.querySelector(".beliv-brand");
     refs.launcherForm = root.querySelector(".beliv-launcher");
@@ -334,6 +335,7 @@
     syncLauncherPlaceholderRotation(true);
 
     bindEvents(root);
+    bindViewportEvents();
     bindPublicApi();
     syncLauncherFlashSchedule(true);
     autoFocusLauncherOnMount();
@@ -386,6 +388,36 @@
     });
   }
 
+  function bindViewportEvents() {
+    if (typeof window === "undefined" || typeof window.addEventListener !== "function") {
+      return;
+    }
+
+    window.addEventListener("resize", syncViewportHeight);
+    window.addEventListener("orientationchange", syncViewportHeight);
+    if (window.visualViewport && typeof window.visualViewport.addEventListener === "function") {
+      window.visualViewport.addEventListener("resize", syncViewportHeight);
+      window.visualViewport.addEventListener("scroll", syncViewportHeight);
+    }
+  }
+
+  function syncViewportHeight() {
+    if (!refs.shell || typeof window === "undefined") {
+      return;
+    }
+
+    var viewportHeight =
+      window.visualViewport && typeof window.visualViewport.height === "number"
+        ? window.visualViewport.height
+        : 0;
+    if (!(viewportHeight > 0) && typeof window.innerHeight === "number") {
+      viewportHeight = window.innerHeight;
+    }
+    if (viewportHeight > 0) {
+      refs.shell.style.setProperty("--beliv-viewport-height", Math.round(viewportHeight) + "px");
+    }
+  }
+
   function openModal(source) {
     if (!refs.modal || !refs.shell) {
       return;
@@ -416,6 +448,7 @@
     }
     state.isOpen = true;
     placeHostRoot();
+    syncViewportHeight();
     refs.modal.classList.add("beliv-open");
     refs.modal.setAttribute("aria-hidden", "false");
     refs.shell.classList.add("beliv-open");
@@ -3070,6 +3103,7 @@
       "  --beliv-z-index:" + options.zIndex + ";" +
       "  --beliv-popup-width:" + options.popupWidth + ";" +
       "  --beliv-popup-height:" + options.popupHeight + ";" +
+      "  --beliv-viewport-height:100vh;" +
       "  display:block;" +
       "  width:100%;" +
       "}" +
@@ -3378,7 +3412,7 @@
       "  position:absolute;" +
       "  bottom:86px;" +
       "  width:min(var(--beliv-popup-width),calc(100vw - 32px));" +
-      "  height:min(var(--beliv-popup-height),calc(100vh - 108px));" +
+      "  height:min(var(--beliv-popup-height),calc(var(--beliv-viewport-height,100vh) - 108px));" +
       "  border:1px solid rgba(168,189,218,0.64);" +
       "  background:linear-gradient(160deg,#fbfcff 0,#f6f8fb 58%,#eff3f8 100%);" +
       "  background:linear-gradient(160deg,color-mix(in srgb,#ffffff 99%,var(--beliv-accent) 1%) 0%,color-mix(in srgb,#ffffff 98%,var(--beliv-accent) 2%) 58%,color-mix(in srgb,#ffffff 97%,var(--beliv-accent) 3%) 100%);" +
@@ -3437,7 +3471,7 @@
       "  right:auto !important;" +
       "  bottom:auto;" +
       "  width:min(960px,calc(100vw - 56px));" +
-      "  height:min(84vh,780px);" +
+      "  height:min(780px,calc(var(--beliv-viewport-height,100vh) * .84));" +
       "  border-radius:28px;" +
       "  transform:translate(-50%,-46%) scale(.985) translateX(var(--beliv-hover-shift-x)) rotateY(var(--beliv-hover-tilt-y));" +
       "}" +
@@ -3731,7 +3765,7 @@
       "  max-width:100%;" +
       "  border:1px solid color-mix(in srgb,var(--beliv-accent) 22%,#d8e5f2 78%);" +
       "  border-right-width:4px;" +
-      "  border-right-style:dashed;" +
+      "  border-right-style:dotted;" +
       "  border-right-color:color-mix(in srgb,var(--beliv-accent) 72%,var(--beliv-accent-dark) 28%);" +
       "  border-radius:8px;" +
       "  background:color-mix(in srgb,#f7fbff 88%,var(--beliv-accent) 12%);" +
@@ -4122,7 +4156,7 @@
       "  .beliv-shell.beliv-left .beliv-launcher{left:8px;}" +
       "  .beliv-panel{" +
       "    width:min(var(--beliv-popup-width),calc(100vw - 16px));" +
-      "    height:min(var(--beliv-popup-height),calc(100vh - 82px));" +
+      "    height:min(var(--beliv-popup-height),calc(var(--beliv-viewport-height,100vh) - 82px));" +
       "    bottom:70px;" +
       "  }" +
       "  .beliv-shell.beliv-right .beliv-panel{right:8px;}" +
@@ -4133,7 +4167,7 @@
       "    right:auto !important;" +
       "    bottom:auto;" +
       "    width:min(960px,calc(100vw - 16px));" +
-      "    height:min(84vh,780px);" +
+      "    height:min(780px,calc(var(--beliv-viewport-height,100vh) * .84));" +
       "    transform:translate(-50%,-46%) scale(.985) translateX(var(--beliv-hover-shift-x)) rotateY(var(--beliv-hover-tilt-y));" +
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-modal.beliv-open .beliv-panel{" +
@@ -4171,12 +4205,22 @@
       "    border-radius:18px;" +
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
+      "    top:max(8px,calc(env(safe-area-inset-top) + 8px));" +
+      "    bottom:max(8px,calc(env(safe-area-inset-bottom) + 8px));" +
       "    width:min(960px,calc(100vw - 12px));" +
-      "    height:min(86vh,780px);" +
+      "    height:auto;" +
       "    border-radius:18px;" +
+      "    transform:translate(-50%,0) scale(.985) translateX(var(--beliv-hover-shift-x)) rotateY(var(--beliv-hover-tilt-y));" +
+      "  }" +
+      "  .beliv-shell.beliv-mode-fullcenter .beliv-modal.beliv-open .beliv-panel{" +
+      "    transform:translate(-50%,0) scale(1) translateX(var(--beliv-hover-shift-x)) rotateY(var(--beliv-hover-tilt-y));" +
       "  }" +
       "}" +
       "@media (max-width:480px){" +
+      "  .beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
+      "    top:max(6px,calc(env(safe-area-inset-top) + 6px));" +
+      "    bottom:max(6px,calc(env(safe-area-inset-bottom) + 6px));" +
+      "  }" +
       "  .beliv-header{" +
       "    padding:13px 12px 12px;" +
       "    gap:10px;" +
@@ -4254,8 +4298,10 @@
       "    border-radius:16px;" +
       "  }" +
       "  .beliv-shell.beliv-mode-fullcenter .beliv-panel{" +
+      "    top:max(4px,calc(env(safe-area-inset-top) + 4px));" +
+      "    bottom:max(4px,calc(env(safe-area-inset-bottom) + 4px));" +
       "    width:min(960px,calc(100vw - 8px));" +
-      "    height:min(88vh,780px);" +
+      "    height:auto;" +
       "    border-radius:16px;" +
       "  }" +
       "  .beliv-chat-form{" +
