@@ -495,11 +495,28 @@
   }
 
   function focusChatInput() {
+    if (!shouldAutoFocusChatInput()) {
+      return;
+    }
     setTimeout(function () {
-      if (refs.chatInput && !refs.chatInput.disabled) {
-        refs.chatInput.focus();
+      if (refs.chatInput && !refs.chatInput.disabled && state.isOpen) {
+        try {
+          refs.chatInput.focus({ preventScroll: true });
+        } catch (error) {
+          refs.chatInput.focus();
+        }
       }
-    }, 40);
+    }, 260);
+  }
+
+  function shouldAutoFocusChatInput() {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return true;
+    }
+    return !(
+      window.matchMedia("(hover: none)").matches ||
+      window.matchMedia("(pointer: coarse)").matches
+    );
   }
 
   function shouldUseLauncherMorphAnimation() {
@@ -3395,16 +3412,18 @@
       "  inset:0;" +
       "  z-index:calc(var(--beliv-z-index) + 1);" +
       "  pointer-events:none;" +
-      "  opacity:0;" +
-      "  transition:opacity .22s ease;" +
+      "  visibility:hidden;" +
+      "  transition:visibility 0s linear .22s;" +
       "}" +
-      ".beliv-modal.beliv-open{opacity:1;pointer-events:auto;}" +
+      ".beliv-modal.beliv-open{visibility:visible;pointer-events:auto;transition-delay:0s;}" +
       ".beliv-overlay{" +
       "  position:absolute;" +
       "  inset:0;" +
       "  background:rgba(6,14,26,0.45);" +
       "  backdrop-filter:blur(6px) saturate(120%);" +
       "  -webkit-backdrop-filter:blur(6px) saturate(120%);" +
+      "  opacity:0;" +
+      "  transition:opacity .22s ease;" +
       "}" +
       ".beliv-panel{" +
       "  --beliv-hover-shift-x:0px;" +
@@ -3422,10 +3441,11 @@
       "  display:flex;" +
       "  flex-direction:column;" +
       "  box-shadow:0 30px 72px rgba(6,28,60,0.3),inset 0 1px 0 rgba(255,255,255,0.66);" +
+      "  opacity:0;" +
       "  transform:translateY(14px) scale(.985) translateX(var(--beliv-hover-shift-x)) rotateY(var(--beliv-hover-tilt-y));" +
       "  transform-style:preserve-3d;" +
-      "  will-change:transform;" +
-      "  transition:transform .22s ease;" +
+      "  will-change:transform,opacity;" +
+      "  transition:transform .22s ease,opacity .22s ease;" +
       "}" +
       ".beliv-panel::before{" +
       "  content:'';" +
@@ -3450,7 +3470,8 @@
       "  position:relative;" +
       "  z-index:1;" +
       "}" +
-      ".beliv-modal.beliv-open .beliv-panel{transform:translateY(0) scale(1) translateX(var(--beliv-hover-shift-x)) rotateY(var(--beliv-hover-tilt-y));}" +
+      ".beliv-modal.beliv-open .beliv-overlay{opacity:1;}" +
+      ".beliv-modal.beliv-open .beliv-panel{opacity:1;transform:translateY(0) scale(1) translateX(var(--beliv-hover-shift-x)) rotateY(var(--beliv-hover-tilt-y));}" +
       ".beliv-shell.beliv-right .beliv-panel{right:20px;}" +
       ".beliv-shell.beliv-left .beliv-panel{left:20px;}" +
       ".beliv-shell.beliv-opening-launcher .beliv-panel{" +

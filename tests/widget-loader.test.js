@@ -234,3 +234,25 @@ test('viewport height sync falls back to innerHeight when visual viewport is una
 
   assert.equal(styleState['--beliv-viewport-height'], '667px');
 });
+
+test('modal open state animates overlay and panel instead of fading the wrapper', () => {
+  assert.match(loaderSource, /\.beliv-modal\{[\s\S]*?visibility:hidden;[\s\S]*?transition:visibility 0s linear \.22s;/);
+  assert.match(
+    loaderSource,
+    /\.beliv-modal\.beliv-open\{visibility:visible;pointer-events:auto;transition-delay:0s;\}/
+  );
+  assert.match(loaderSource, /\.beliv-overlay\{[\s\S]*?opacity:0;[\s\S]*?transition:opacity \.22s ease;/);
+  assert.match(loaderSource, /\.beliv-modal\.beliv-open \.beliv-overlay\{opacity:1;\}/);
+  assert.match(loaderSource, /\.beliv-panel\{[\s\S]*?opacity:0;[\s\S]*?transition:transform \.22s ease,opacity \.22s ease;/);
+  assert.match(loaderSource, /\.beliv-modal\.beliv-open \.beliv-panel\{opacity:1;transform:translateY\(0\) scale\(1\)/);
+});
+
+test('chat input autofocus is skipped for touch-style pointers', () => {
+  const sandbox = loadFunctions(['shouldAutoFocusChatInput']);
+
+  sandbox.window.matchMedia = (query) => ({
+    matches: query === '(pointer: coarse)'
+  });
+
+  assert.equal(sandbox.shouldAutoFocusChatInput(), false);
+});
