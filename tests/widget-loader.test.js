@@ -256,3 +256,42 @@ test('chat input autofocus is skipped for touch-style pointers', () => {
 
   assert.equal(sandbox.shouldAutoFocusChatInput(), false);
 });
+
+test('launcher field click uses the shared launcher modal opener', () => {
+  assert.match(
+    loaderSource,
+    /refs\.launcherInput\.addEventListener\("click", function \(event\) \{[\s\S]*?event\.preventDefault\(\);[\s\S]*?openLauncherModal\(\);[\s\S]*?\}\);/
+  );
+
+  const sandbox = loadFunctions(['openLauncherModal']);
+  let blurCount = 0;
+  let launcherEffectsCount = 0;
+  let openModalSource = '';
+
+  sandbox.refs = {
+    launcherForm: {},
+    launcherInput: {
+      value: 'Need help with pricing',
+      blur() {
+        blurCount += 1;
+      }
+    },
+    chatInput: {
+      value: ''
+    }
+  };
+  sandbox.config = { mode: 'fullcenter' };
+  sandbox.triggerLauncherOpenEffects = () => {
+    launcherEffectsCount += 1;
+  };
+  sandbox.openModal = (source) => {
+    openModalSource = source;
+  };
+
+  sandbox.openLauncherModal();
+
+  assert.equal(sandbox.refs.chatInput.value, 'Need help with pricing');
+  assert.equal(blurCount, 1);
+  assert.equal(launcherEffectsCount, 1);
+  assert.equal(openModalSource, 'launcher');
+});

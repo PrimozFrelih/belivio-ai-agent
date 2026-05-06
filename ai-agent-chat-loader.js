@@ -345,8 +345,7 @@
     refs.launcherForm.addEventListener("submit", function (event) {
       event.preventDefault();
       var prompt = normalizePromptInput(refs.launcherInput.value || "");
-      triggerLauncherOpenEffects();
-      openModal("launcher");
+      openLauncherModal();
       if (!prompt || state.isSending) {
         focusChatInput();
         return;
@@ -354,6 +353,11 @@
       refs.launcherInput.value = "";
       refs.chatInput.value = "";
       sendPrompt(prompt);
+    });
+
+    refs.launcherInput.addEventListener("click", function (event) {
+      event.preventDefault();
+      openLauncherModal();
     });
 
     refs.chatForm.addEventListener("submit", function (event) {
@@ -386,6 +390,20 @@
         closeModal();
       }
     });
+  }
+
+  function openLauncherModal() {
+    if (!refs.launcherInput || !refs.launcherForm || config.mode === "popupfloat") {
+      return;
+    }
+    if (refs.chatInput && !refs.chatInput.value) {
+      refs.chatInput.value = refs.launcherInput.value || "";
+    }
+    if (typeof refs.launcherInput.blur === "function") {
+      refs.launcherInput.blur();
+    }
+    triggerLauncherOpenEffects();
+    openModal("launcher");
   }
 
   function bindViewportEvents() {
