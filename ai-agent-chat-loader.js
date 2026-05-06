@@ -198,6 +198,7 @@
   var launcherFlashClassTimer = null;
   var placeholderRotateTimer = null;
   var placeholderRotateIndex = 0;
+  var skipNextLauncherInputClick = false;
 
   var refs = {
     hostRoot: null,
@@ -355,8 +356,21 @@
       sendPrompt(prompt);
     });
 
+    refs.launcherInput.addEventListener("pointerdown", function (event) {
+      if (typeof event.button === "number" && event.button !== 0) {
+        return;
+      }
+      skipNextLauncherInputClick = true;
+      event.preventDefault();
+      openLauncherModal();
+    });
+
     refs.launcherInput.addEventListener("click", function (event) {
       event.preventDefault();
+      if (skipNextLauncherInputClick) {
+        skipNextLauncherInputClick = false;
+        return;
+      }
       openLauncherModal();
     });
 

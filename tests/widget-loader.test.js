@@ -260,7 +260,11 @@ test('chat input autofocus is skipped for touch-style pointers', () => {
 test('launcher field click uses the shared launcher modal opener', () => {
   assert.match(
     loaderSource,
-    /refs\.launcherInput\.addEventListener\("click", function \(event\) \{[\s\S]*?event\.preventDefault\(\);[\s\S]*?openLauncherModal\(\);[\s\S]*?\}\);/
+    /refs\.launcherInput\.addEventListener\("pointerdown", function \(event\) \{[\s\S]*?skipNextLauncherInputClick = true;[\s\S]*?event\.preventDefault\(\);[\s\S]*?openLauncherModal\(\);[\s\S]*?\}\);/
+  );
+  assert.match(
+    loaderSource,
+    /refs\.launcherInput\.addEventListener\("click", function \(event\) \{[\s\S]*?event\.preventDefault\(\);[\s\S]*?if \(skipNextLauncherInputClick\) \{[\s\S]*?skipNextLauncherInputClick = false;[\s\S]*?return;[\s\S]*?\}[\s\S]*?openLauncherModal\(\);[\s\S]*?\}\);/
   );
 
   const sandbox = loadFunctions(['openLauncherModal']);
