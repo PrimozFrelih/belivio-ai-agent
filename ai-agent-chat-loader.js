@@ -39,8 +39,8 @@
       "Kak\u0161en je va\u0161 na\u010din uvedbe AI orodij v poslovanje?"
     ],
     suggestedPromptsHtml: false,
-    contactEmail: "primoz.frelih@agital.si",
-    contactPhone: "00 386 41 980 991",
+    contactEmail: "",
+    contactPhone: "",
     accentColor: "#1877f2",
     accentColorDark: "#1663d8",
     textColor: "#0f172a",

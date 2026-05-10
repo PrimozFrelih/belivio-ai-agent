@@ -63,10 +63,10 @@ function loadFunctions(functionNames) {
   return sandbox;
 }
 
-test('default config includes agital defaults', () => {
+test('default config leaves contact fields empty by default', () => {
   assert.match(loaderSource, /domain:\s*"agital\.si"/);
-  assert.match(loaderSource, /contactEmail:\s*"primoz\.frelih@agital\.si"/);
-  assert.match(loaderSource, /contactPhone:\s*"00 386 41 980 991"/);
+  assert.match(loaderSource, /contactEmail:\s*""/);
+  assert.match(loaderSource, /contactPhone:\s*""/);
   assert.match(loaderSource, /PLACEHOLDER_ROTATE_INTERVAL_MS\s*=\s*2000/);
   assert.match(loaderSource, /brandLabelHtml:\s*false/);
   assert.match(loaderSource, /suggestedPrompts:\s*\[/);
